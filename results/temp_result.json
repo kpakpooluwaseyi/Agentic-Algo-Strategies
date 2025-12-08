@@ -1,0 +1,8 @@
+{
+  "strategy_name": "ema_50_break_retest_reversal",
+  "return": -32.85496853009759,
+  "sharpe": -0.7523326195149319,
+  "max_drawdown": -35.479829897952065,
+  "win_rate": 26.153846153846157,
+  "total_trades": 65
+}
