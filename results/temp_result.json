@@ -1,0 +1,8 @@
+{
+  "strategy_name": "market_maker_reversal_m_w_3hit",
+  "return": -3.8694031180759705,
+  "sharpe": -5.3220516369057265,
+  "max_drawdown": -3.869403118075976,
+  "win_rate": 4.166666666666666,
+  "total_trades": 24
+}
