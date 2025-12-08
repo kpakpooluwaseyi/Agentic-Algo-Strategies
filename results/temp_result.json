@@ -1,0 +1,8 @@
+{
+  "strategy_name": "mm_w_m_reversal_ema_target",
+  "return": -1.7306457999999838,
+  "sharpe": -0.19863418989007658,
+  "max_drawdown": -4.10622983968314,
+  "win_rate": 33.33333333333333,
+  "total_trades": 3
+}
