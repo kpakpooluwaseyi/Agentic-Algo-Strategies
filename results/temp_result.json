@@ -1,0 +1,8 @@
+{
+  "strategy_name": "session_liquidity_grab_reversal",
+  "return": -13.80306882564156,
+  "sharpe": -13.856043894297388,
+  "max_drawdown": -13.803068825641562,
+  "win_rate": 7.4074074074074066,
+  "total_trades": 27
+}
