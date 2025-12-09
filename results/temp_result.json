@@ -1,0 +1,8 @@
+{
+  "strategy_name": "asia_liquidity_grab_reversal",
+  "return": -0.902442149495415,
+  "sharpe": -3.0160368208348336,
+  "max_drawdown": -0.9024421494954193,
+  "win_rate": 6.25,
+  "total_trades": 16
+}
