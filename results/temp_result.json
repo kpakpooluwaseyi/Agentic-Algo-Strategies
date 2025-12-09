@@ -1,0 +1,8 @@
+{
+  "strategy_name": "asia_liquidity_sweep_reversal_uk_session",
+  "return": -2.2076222958276048e-05,
+  "sharpe": -8.815743912483363,
+  "max_drawdown": -2.270025524220287e-05,
+  "win_rate": 0.0,
+  "total_trades": 25
+}
