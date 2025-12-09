@@ -1,0 +1,8 @@
+{
+  "strategy_name": "session_liquidity_sweep_reversal",
+  "return": -7.5350467073455,
+  "sharpe": -10.901698283278712,
+  "max_drawdown": -7.535046707345505,
+  "win_rate": 0.0,
+  "total_trades": 38
+}
