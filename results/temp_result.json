@@ -1,0 +1,8 @@
+{
+  "strategy_name": "measured_retracement_scalp_mow_internal",
+  "return": -6.7309811615371435,
+  "sharpe": -783.8991315066667,
+  "max_drawdown": -7.519529670060432,
+  "win_rate": 12.5,
+  "total_trades": 16
+}
