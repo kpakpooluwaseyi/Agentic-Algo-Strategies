@@ -1,0 +1,8 @@
+{
+  "strategy_name": "measured_move_center_peak_scalp",
+  "return": 24.003048819946123,
+  "sharpe": 305.5490745850237,
+  "max_drawdown": -0.338200289716617,
+  "win_rate": 100.0,
+  "total_trades": 10
+}
