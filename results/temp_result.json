@@ -1,0 +1,8 @@
+{
+  "strategy_name": "measured_retracement_scalp_mw_formation",
+  "return": 0.0,
+  "sharpe": NaN,
+  "max_drawdown": -0.0,
+  "win_rate": NaN,
+  "total_trades": 0
+}
