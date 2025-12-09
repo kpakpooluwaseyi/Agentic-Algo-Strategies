@@ -1,0 +1,36 @@
+Backtest.run:   0%|          | 0/19103 [00:00<?, ?bar/s]                                                        Start                     2023-01-02 00:00:00
+End                       2023-07-19 23:45:00
+Duration                    198 days 23:45:00
+Exposure Time [%]                         0.0
+Equity Final [$]                      10000.0
+Equity Peak [$]                       10000.0
+Return [%]                                0.0
+Buy & Hold Return [%]                 0.02554
+Return (Ann.) [%]                         0.0
+Volatility (Ann.) [%]                     0.0
+CAGR [%]                                  0.0
+Sharpe Ratio                              NaN
+Sortino Ratio                             NaN
+Calmar Ratio                              NaN
+Alpha [%]                                 0.0
+Beta                                      0.0
+Max. Drawdown [%]                        -0.0
+Avg. Drawdown [%]                         NaN
+Max. Drawdown Duration                    NaN
+Avg. Drawdown Duration                    NaN
+# Trades                                    0
+Win Rate [%]                              NaN
+Best Trade [%]                            NaN
+Worst Trade [%]                           NaN
+Avg. Trade [%]                            NaN
+Max. Trade Duration                       NaN
+Avg. Trade Duration                       NaN
+Profit Factor                             NaN
+Expectancy [%]                            NaN
+SQN                                       NaN
+Kelly Criterion                           NaN
+_strategy                 AsiaLiquidityGra...
+_equity_curve                             ...
+_trades                   Empty DataFrame
+...
+dtype: object
