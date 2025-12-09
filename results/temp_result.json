@@ -1,0 +1,9 @@
+{
+  "strategy_name": "asia_liquidity_grab_reversal (Optimized)",
+  "return": 0,
+  "sharpe": 0,
+  "max_drawdown": 0,
+  "win_rate": 0,
+  "total_trades": 0,
+  "note": "No trades executed during optimization."
+}
