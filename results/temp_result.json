@@ -1,0 +1,8 @@
+{
+  "strategy_name": "mow_center_peak_50_percent_scalp",
+  "return": 3.108136534208519,
+  "sharpe": NaN,
+  "max_drawdown": -1.0854607016552054,
+  "win_rate": 33.33333333333333,
+  "total_trades": 3
+}
