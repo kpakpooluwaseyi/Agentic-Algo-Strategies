@@ -1,0 +1,8 @@
+{
+  "strategy_name": "measured_move_50_percent_retracement_scalp",
+  "return": 0.0,
+  "sharpe": null,
+  "max_drawdown": -0.0,
+  "win_rate": 0.0,
+  "total_trades": 0
+}
