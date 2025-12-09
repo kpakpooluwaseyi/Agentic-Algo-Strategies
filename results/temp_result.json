@@ -1,0 +1,8 @@
+{
+  "strategy_name": "fibonacci_center_peak_scalp",
+  "return": -3.0575002188217915,
+  "sharpe": -61.385616241415676,
+  "max_drawdown": -3.057500218821796,
+  "win_rate": 0.0,
+  "total_trades": 6
+}
