@@ -1,0 +1,8 @@
+{
+  "strategy_name": "fibonacci_measured_retracement_scalp",
+  "return": -14.37353743491997,
+  "sharpe": -0.24636277790334118,
+  "max_drawdown": -30.750851855625083,
+  "win_rate": 25.0,
+  "total_trades": 28
+}
