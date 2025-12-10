@@ -144,4 +144,4 @@ if __name__ == '__main__':
         json.dump(stats_dict, f, indent=2, cls=CustomEncoder)
 
     print("Backtest optimization stats saved to results/temp_result.json")
-    bt.plot()
+    bt.plot(filename='results/asia_liquidity_grab_reversal.html')
