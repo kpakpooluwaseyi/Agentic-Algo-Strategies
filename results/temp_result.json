@@ -1,8 +1,8 @@
 {
-  "strategy_name": "ict_asian_sweep_london_open",
-  "return": -6.791005807522015,
-  "sharpe": -6.407830878263151,
-  "max_drawdown": -6.79100580752201,
-  "win_rate": 0.0,
-  "total_trades": 18
+  "strategy_name": "silver_bullet_fvg_retest",
+  "return": 2.9767299413022736,
+  "sharpe": 0.8731292993796814,
+  "max_drawdown": -8.336646498721134,
+  "win_rate": 17.857142857142858,
+  "total_trades": 28
 }
