@@ -1,8 +1,0 @@
-{
-  "strategy_name": "measured_move_w_m_internal_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
-}
