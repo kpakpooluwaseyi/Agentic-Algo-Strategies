@@ -91,4 +91,12 @@ src/audio
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/focus_history.csv
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/private_data
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
+<<<<<<< HEAD
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit\n# Ignore backtesting results and plots\nresults/\n*.html
+=======
+/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
+
+# Generated artifacts
+results/
+*.html
+>>>>>>> main
