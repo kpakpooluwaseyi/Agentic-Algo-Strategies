@@ -1,8 +1,8 @@
 {
-  "strategy_name": "fibonacci_center_peak_scalp",
-  "return": -5.443907819791948,
-  "sharpe": null,
-  "max_drawdown": -5.533396312574645,
-  "win_rate": 6.666666666666667,
-  "total_trades": 15.0
+  "strategy_name": "silver_bullet_fvg_retest",
+  "return": 2.9767299413022736,
+  "sharpe": 0.8731292993796814,
+  "max_drawdown": -8.336646498721134,
+  "win_rate": 17.857142857142858,
+  "total_trades": 28
 }
