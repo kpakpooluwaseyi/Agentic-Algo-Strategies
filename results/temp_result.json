@@ -1,8 +1,0 @@
-{
-  "strategy_name": "fibonacci_measured_move_mow_center_peak_scalp",
-  "return": 2.215943265306123,
-  "sharpe": NaN,
-  "max_drawdown": -0.19948499999999925,
-  "win_rate": 100.0,
-  "total_trades": 1
-}
