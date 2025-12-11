@@ -1,8 +1,0 @@
-{
-  "strategy_name": "ema_50_pullback_engulfing_continuation",
-  "return": -3.069983799999991,
-  "sharpe": -0.07297911015562025,
-  "max_drawdown": -14.111967271414072,
-  "win_rate": 40.0,
-  "total_trades": 10
-}
