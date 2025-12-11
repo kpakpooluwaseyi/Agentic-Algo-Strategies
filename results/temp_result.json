@@ -1,8 +1,8 @@
 {
-  "strategy_name": "m15_ema_structure_retest",
-  "return": 0.36145884772887804,
-  "sharpe": 3.9369573649847664,
-  "max_drawdown": -0.22570895369415922,
-  "win_rate": 100.0,
-  "total_trades": 1
+  "strategy_name": "corrective_wave_fade_with_volume_divergence",
+  "return": -15.978123474479187,
+  "sharpe": -1.1909722840029202,
+  "max_drawdown": -18.63459514499214,
+  "win_rate": 50.0,
+  "total_trades": 2
 }
