@@ -1,8 +1,8 @@
 {
-  "strategy_name": "measured_move_50_percent_scalp",
-  "return": -16.38593652834467,
-  "sharpe": -41245327.958673455,
-  "max_drawdown": -16.38593652834467,
-  "win_rate": 12.962962962962962,
-  "total_trades": 54
+  "strategy_name": "silver_bullet_fvg_retest",
+  "return": 2.9767299413022736,
+  "sharpe": 0.8731292993796814,
+  "max_drawdown": -8.336646498721134,
+  "win_rate": 17.857142857142858,
+  "total_trades": 28
 }
