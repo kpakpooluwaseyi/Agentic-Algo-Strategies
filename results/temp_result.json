@@ -1,8 +1,8 @@
 {
-  "strategy_name": "m15_ema_structure_retest",
-  "return": 0.36145884772887804,
-  "sharpe": 3.9369573649847664,
-  "max_drawdown": -0.22570895369415922,
-  "win_rate": 100.0,
-  "total_trades": 1
+  "strategy_name": "ict_asian_sweep_london_open",
+  "return": -6.791005807522015,
+  "sharpe": -6.407830878263151,
+  "max_drawdown": -6.79100580752201,
+  "win_rate": 0.0,
+  "total_trades": 18
 }
