@@ -1,8 +1,8 @@
 {
-  "strategy_name": "m15_ema_structure_retest",
-  "return": 0.36145884772887804,
-  "sharpe": 3.9369573649847664,
-  "max_drawdown": -0.22570895369415922,
-  "win_rate": 100.0,
+  "strategy_name": "range_bar_pullback_continuation",
+  "return": -1.637305600000007,
+  "sharpe": NaN,
+  "max_drawdown": -1.6373056000000052,
+  "win_rate": 0.0,
   "total_trades": 1
 }
