@@ -1,8 +1,8 @@
 {
-  "strategy_name": "asia_liquidity_grab_reversal",
-  "return": -0.9073135649002216,
-  "sharpe": -3.9606424688705815,
-  "max_drawdown": -0.9073135649002251,
-  "win_rate": 0.0,
-  "total_trades": 2
+  "strategy_name": "silver_bullet_fvg_retest",
+  "return": 2.9767299413022736,
+  "sharpe": 0.8731292993796814,
+  "max_drawdown": -8.336646498721134,
+  "win_rate": 17.857142857142858,
+  "total_trades": 28
 }
