@@ -1,8 +1,8 @@
 {
-  "strategy_name": "ema_structure_retest_15m",
-  "return": 195.04406459999998,
-  "sharpe": 0.5614218400227043,
-  "max_drawdown": -50.41472200047827,
-  "win_rate": 80.0,
-  "total_trades": 5
+  "strategy_name": "silver_bullet_fvg_retest",
+  "return": 2.9767299413022736,
+  "sharpe": 0.8731292993796814,
+  "max_drawdown": -8.336646498721134,
+  "win_rate": 17.857142857142858,
+  "total_trades": 28
 }
