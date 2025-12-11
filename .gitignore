@@ -92,4 +92,11 @@ src/audio
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/private_data
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
+<<<<<<< HEAD
 results/*.csv
+=======
+
+# Generated artifacts
+results/
+*.html
+>>>>>>> main
