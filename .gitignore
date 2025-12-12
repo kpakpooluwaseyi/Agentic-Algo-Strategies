@@ -91,6 +91,9 @@ src/audio
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/focus_history.csv
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/src/data/private_data
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
+<<<<<<< HEAD
+/Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit\n# Strategy results\nresults/\n*.html\n
+=======
 /Users/md/Dropbox/dev/github/moon-dev-ai-agents-for-trading/.replit
 <<<<<<< HEAD
 results/*.csv

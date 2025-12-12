@@ -1,239 +1,216 @@
-from backtesting import Backtest, Strategy
-import pandas as pd
-import numpy as np
 import json
+import os
 
-# Pass-through function to use DataFrame columns as indicators
-def pass_through(series):
-    return series
+import numpy as np
+import pandas as pd
+from backtesting import Backtest, Strategy
 
-class SessionLiquidityGrabReversalStrategy(Strategy):
-    # Optimizable parameter for stop-loss buffer
-    sl_buffer_pct = 0.01
-    uk_session_code = 1 # Default for 'UK', can be overridden in optimize()
 
-    def init(self):
-        # State variables to track the two-bar pattern
-        self.liquidity_grab_bar_high = None
-        self.liquidity_grab_bar_low = None
-
-        # Map pre-processed data columns to indicators
-        self.session = self.I(pass_through, self.data.df['session'].values, plot=False)
-        self.asia_high = self.I(pass_through, self.data.df['asia_high'].values)
-        self.asia_low = self.I(pass_through, self.data.df['asia_low'].values)
-        self.asia_range_pct = self.I(pass_through, self.data.df['asia_range_pct'].values, plot=False)
-
-    def next(self):
-        # Ensure we have valid Asia range data for the current bar
-        if np.isnan(self.asia_high[-1]) or np.isnan(self.asia_low[-1]):
-            return
-
-        # Only trade during the UK session and if a position is not already open
-        if self.session[-1] == self.uk_session_code and not self.position:
-
-            # --- STATE 1: WAITING FOR SHORT CONFIRMATION ---
-            if self.liquidity_grab_bar_high is not None:
-                is_bearish_engulfing = self.data.Close[-1] < self.data.Open[-2] and \
-                                       self.data.Open[-1] > self.data.Close[-2] and \
-                                       self.data.Close[-1] < self.asia_high[-1]
-
-                if is_bearish_engulfing:
-                    sl = self.liquidity_grab_bar_high * (1 + self.sl_buffer_pct / 100)
-                    tp = self.asia_low[-1]
-                    self.sell(sl=sl, tp=tp)
-
-                # Reset state regardless of entry; we only get one chance at confirmation
-                self.liquidity_grab_bar_high = None
-
-            # --- STATE 2: WAITING FOR LONG CONFIRMATION ---
-            elif self.liquidity_grab_bar_low is not None:
-                is_bullish_engulfing = self.data.Open[-1] < self.data.Close[-2] and \
-                                       self.data.Close[-1] > self.data.Open[-2] and \
-                                       self.data.Close[-1] > self.asia_low[-1]
-
-                if is_bullish_engulfing:
-                    sl = self.liquidity_grab_bar_low * (1 - self.sl_buffer_pct / 100)
-                    tp = self.asia_high[-1]
-                    self.buy(sl=sl, tp=tp)
-
-                # Reset state regardless of entry
-                self.liquidity_grab_bar_low = None
-
-            # --- STATE 3: NO ACTIVE SETUP, LOOKING FOR A NEW ONE ---
-            else:
-                is_asia_range_valid = self.asia_range_pct[-1] < 2.0
-                if is_asia_range_valid:
-                    # Check for short setup first
-                    if self.data.High[-1] > self.asia_high[-1]:
-                        self.liquidity_grab_bar_high = self.data.High[-1]
-                    # Else, check for long setup
-                    elif self.data.Low[-1] < self.asia_low[-1]:
-                        self.liquidity_grab_bar_low = self.data.Low[-1]
-
-def generate_forex_data():
+def generate_synthetic_data(days=500):
     """
-    Generates synthetic 15-minute forex data with specific patterns for the
-    Session Liquidity Grab Reversal strategy.
+    Generates synthetic 24-hour forex-like data for backtesting.
     """
-    # Create a date range for a few days
-    dates = pd.date_range(start='2023-01-01', end='2023-01-10', freq='15min')
-    n = len(dates)
+    rng = np.random.default_rng(42)
+    n_points = days * 24 * 4  # 15-min intervals
+    dates = pd.date_range(start='2022-01-01', periods=n_points, freq='15min')
 
-    # Base price movement with some noise
-    price = 1.1000 + np.random.randn(n).cumsum() * 0.0001
+    # Base price with a random walk
+    price = 1.1000
+    returns = rng.normal(loc=0, scale=0.0005, size=n_points)
+    price_path = price * (1 + returns).cumprod()
+
+    # Add some volatility spikes
+    for _ in range(int(n_points / 100)):
+        idx = rng.integers(1, n_points - 1)
+        spike = rng.normal(0, 0.005)
+        price_path[idx:] *= (1 + spike)
 
     # Create DataFrame
-    data = pd.DataFrame({
-        'Open': price,
-        'High': price,
-        'Low': price,
-        'Close': price
-    }, index=dates)
+    df = pd.DataFrame(index=dates)
+    df['Open'] = price_path
+    df['High'] = df['Open'] + rng.uniform(0, 0.001, size=n_points)
+    df['Low'] = df['Open'] - rng.uniform(0, 0.001, size=n_points)
+    df['Close'] = df['Open'] + rng.normal(0, 0.0005, size=n_points)
 
-    # Generate more realistic candles
-    data['Open'] = data['Close'].shift(1).fillna(method='bfill')
-    data['High'] = data[['Open', 'Close']].max(axis=1) + np.random.uniform(0, 0.0005, n)
-    data['Low'] = data[['Open', 'Close']].min(axis=1) - np.random.uniform(0, 0.0005, n)
-
-    # --- Inject a specific SHORT pattern ---
-    # Asia session on Jan 4th, 00:00 to 08:00
-    asia_session_mask = (data.index.date == pd.to_datetime('2023-01-04').date()) & \
-                        (data.index.hour >= 0) & (data.index.hour < 8)
-    asia_high = data.loc[asia_session_mask, 'High'].max()
-
-    # UK session open on Jan 4th, starting 08:00
-    uk_session_start_time = pd.to_datetime('2023-01-04 08:00')
-    grab_candle_time = uk_session_start_time
-    engulfing_candle_time = grab_candle_time + pd.Timedelta(minutes=15)
-
-    # 1. Liquidity grab candle (spike above Asia high)
-    data.loc[grab_candle_time, 'High'] = asia_high + 0.0002
-    data.loc[grab_candle_time, 'Open'] = asia_high - 0.0001
-    data.loc[grab_candle_time, 'Close'] = asia_high + 0.0001
-    data.loc[grab_candle_time, 'Low'] = data.loc[grab_candle_time, 'Open'] - 0.0001
-
-
-    # 2. Bearish engulfing candle (closes back below Asia high)
-    previous_close = data.loc[grab_candle_time, 'Close']
-    previous_open = data.loc[grab_candle_time, 'Open']
-    data.loc[engulfing_candle_time, 'Open'] = previous_close + 0.0001
-    data.loc[engulfing_candle_time, 'Close'] = previous_open - 0.0002
-    data.loc[engulfing_candle_time, 'High'] = data.loc[engulfing_candle_time, 'Open'] + 0.0001
-    data.loc[engulfing_candle_time, 'Low'] = data.loc[engulfing_candle_time, 'Close'] - 0.0001
-
-
-    # --- Inject a specific LONG pattern ---
-    # Asia session on Jan 6th, 00:00 to 08:00
-    asia_session_mask_long = (data.index.date == pd.to_datetime('2023-01-06').date()) & \
-                             (data.index.hour >= 0) & (data.index.hour < 8)
-    asia_low = data.loc[asia_session_mask_long, 'Low'].min()
-
-    # UK session open on Jan 6th, starting 08:00
-    uk_session_start_time_long = pd.to_datetime('2023-01-06 08:00')
-    grab_candle_time_long = uk_session_start_time_long
-    engulfing_candle_time_long = grab_candle_time_long + pd.Timedelta(minutes=15)
-
-    # 1. Liquidity grab candle (spike below Asia low)
-    data.loc[grab_candle_time_long, 'Low'] = asia_low - 0.0002
-    data.loc[grab_candle_time_long, 'Open'] = asia_low + 0.0001
-    data.loc[grab_candle_time_long, 'Close'] = asia_low - 0.0001
-    data.loc[grab_candle_time_long, 'High'] = data.loc[grab_candle_time_long, 'Open'] + 0.0001
-
-    # 2. Bullish engulfing candle (closes back above Asia low)
-    previous_close_long = data.loc[grab_candle_time_long, 'Close']
-    previous_open_long = data.loc[grab_candle_time_long, 'Open']
-    data.loc[engulfing_candle_time_long, 'Open'] = previous_close_long - 0.0001
-    data.loc[engulfing_candle_time_long, 'Close'] = previous_open_long + 0.0002
-    data.loc[engulfing_candle_time_long, 'Low'] = data.loc[engulfing_candle_time_long, 'Open'] - 0.0001
-    data.loc[engulfing_candle_time_long, 'High'] = data.loc[engulfing_candle_time_long, 'Close'] + 0.0001
-
-    return data
-
-def preprocess_data(df):
-    """
-    Preprocesses the data to add session information and Asia session highs/lows.
-    """
-    # Define session times (UTC)
-    asia_session_end = 8
-    uk_session_end = 16
-
-    # Determine session for each candle
-    df['session'] = 'US'
-    df.loc[df.index.hour < uk_session_end, 'session'] = 'UK'
-    df.loc[df.index.hour < asia_session_end, 'session'] = 'Asia'
-
-    # Calculate daily Asia session high and low
-    asia_session_data = df[df['session'] == 'Asia']
-    daily_asia_high = asia_session_data.groupby(asia_session_data.index.date)['High'].max()
-    daily_asia_low = asia_session_data.groupby(asia_session_data.index.date)['Low'].min()
-
-    # Map daily values to the entire day
-    df['asia_high'] = pd.Series(df.index.date, index=df.index).map(daily_asia_high)
-    df['asia_low'] = pd.Series(df.index.date, index=df.index).map(daily_asia_low)
-
-    # Forward-fill the values to apply them to subsequent sessions
-    df['asia_high'] = df['asia_high'].ffill()
-    df['asia_low'] = df['asia_low'].ffill()
-
-    # Calculate Asia range percentage
-    df['asia_range_pct'] = (df['asia_high'] - df['asia_low']) / df['asia_low'] * 100
-
-    # Drop rows with NaN values that were created during processing
-    df.dropna(inplace=True)
+    # Ensure High is the max and Low is the min
+    df['High'] = df[['Open', 'High', 'Close']].max(axis=1)
+    df['Low'] = df[['Open', 'Low', 'Close']].min(axis=1)
 
     return df
 
-def sanitize_stats(stats):
+
+def preprocess_data(df):
     """
-    Sanitizes the backtest stats to handle missing keys and non-serializable types.
+    Adds session information and historical data points to the DataFrame using a map-based approach
+    to avoid multiprocessing errors during backtest optimization.
     """
-    # Use .get() to provide a default value (0) if a key is missing, e.g., if no trades occur
-    return {
-        'strategy_name': 'session_liquidity_grab_reversal',
-        'return': float(stats.get('Return [%]', 0.0)),
-        'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
-        'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
-        'win_rate': float(stats.get('Win Rate [%]', 0.0)),
-        'total_trades': int(stats.get('# Trades', 0))
-    }
+    # Define session times in UTC
+    asia_start_hour = 0
+    asia_end_hour = 8
+    london_start_hour = 9
+    london_end_hour = 17
+
+    df['hour'] = df.index.hour
+    df['day'] = df.index.date
+    # Use a unique week identifier (year_week) to prevent mapping issues
+    df['week_str'] = df.index.isocalendar().year.astype(str) + '_' + df.index.isocalendar().week.astype(str)
+
+    # Identify sessions
+    df['is_asia'] = (df['hour'] >= asia_start_hour) & (df['hour'] < asia_end_hour)
+    df['is_london'] = (df['hour'] >= london_start_hour) & (df['hour'] < london_end_hour)
+
+    # --- Calculate Daily/Weekly Levels ---
+    daily_high_map = df.groupby('day')['High'].max().shift(1)
+    daily_low_map = df.groupby('day')['Low'].min().shift(1)
+    df['Prev_Day_High'] = df['day'].map(daily_high_map)
+    df['Prev_Day_Low'] = df['day'].map(daily_low_map)
+    df['Prev_Day_50'] = (df['Prev_Day_High'] + df['Prev_Day_Low']) / 2
+
+    weekly_high_map = df.groupby('week_str')['High'].max().shift(1)
+    weekly_low_map = df.groupby('week_str')['Low'].min().shift(1)
+    df['Prev_Week_High'] = df['week_str'].map(weekly_high_map)
+    df['Prev_Week_Low'] = df['week_str'].map(weekly_low_map)
+    df['Prev_Week_50'] = (df['Prev_Week_High'] + df['Prev_Week_Low']) / 2
+
+    # --- Calculate Asia Session Levels ---
+    asia_high_map = df[df['is_asia']].groupby('day')['High'].max()
+    asia_low_map = df[df['is_asia']].groupby('day')['Low'].min()
+    df['Asia_High'] = df['day'].map(asia_high_map)
+    df['Asia_Low'] = df['day'].map(asia_low_map)
+
+    # Forward fill the session data to make it available throughout the day
+    df['Asia_High'] = df['Asia_High'].ffill()
+    df['Asia_Low'] = df['Asia_Low'].ffill()
+
+    # Calculate Asia Range
+    df['Asia_Range'] = df['Asia_High'] - df['Asia_Low']
+    df['Asia_Range_Pct'] = (df['Asia_Range'] / df['Asia_Low']) * 100
+
+    df.dropna(inplace=True)
+    # clean up helper columns
+    df.drop(columns=['hour', 'day', 'week_str'], inplace=True, errors='ignore')
+    return df
+
+
+class SessionLiquidityGrabReversalStrategy(Strategy):
+    """
+    A strategy that looks for liquidity grabs above/below the Asia session range
+    during the London open, confirmed by an engulfing candle reversal.
+    """
+    # Optimization parameters
+    asia_range_max_pct = 2.0
+    sl_buffer_pct = 0.01
+    risk_pct = 1.0 # Risk 1% of equity per trade
+
+    def init(self):
+        # Using a simple flag to manage the multi-TP state.
+        self.tp_hit = self.I(lambda: np.zeros_like(self.data.Close), name="tp_hit_flag")
+
+    def _calculate_position_size(self, sl_price):
+        """Calculates position size based on fixed fractional risk."""
+        risk_per_trade = self.equity * (self.risk_pct / 100)
+        sl_distance_pips = abs(self.data.Close[-1] - sl_price)
+        if sl_distance_pips == 0:
+            return 0 # Avoid division by zero
+
+        # Assuming a forex-like environment where 1 lot = 100,000 units
+        # and pip value is related to the quote currency. For simplicity, we'll
+        # treat the asset as the base currency and calculate size in units.
+        position_size = risk_per_trade / sl_distance_pips
+        return position_size / 10000 # Convert to a smaller, more testable unit size
+
+    def next(self):
+        # --- TRADE MANAGEMENT ---
+        if self.position:
+            trade = self.trades[-1]
+            if self.tp_hit[-2] == 0:
+                if (self.position.is_long and self.data.High[-1] >= trade.tp) or \
+                   (self.position.is_short and self.data.Low[-1] <= trade.tp):
+                    trade.close(portion=0.5)
+                    trade.sl = trade.entry_price
+                    if self.position.is_long:
+                        trade.tp = self.data.Prev_Day_50[-1] if not np.isnan(self.data.Prev_Day_50[-1]) else trade.tp
+                    else:
+                        trade.tp = self.data.Prev_Day_50[-1] if not np.isnan(self.data.Prev_Day_50[-1]) else trade.tp
+                    self.tp_hit[-1] = 1
+
+        # --- ENTRY LOGIC ---
+        if not self.position and self.data.is_london[-1]:
+            is_asia_range_small = self.data.Asia_Range_Pct[-1] < self.asia_range_max_pct
+
+            # --- SHORT ENTRY LOGIC ---
+            grabbed_asia_high = self.data.High[-1] > self.data.Asia_High[-1]
+            # More robust engulfing: current candle's high/low engulfs previous high/low
+            is_bearish_engulfing = (self.data.Close[-1] < self.data.Open[-1] and
+                                    self.data.High[-1] > self.data.High[-2] and
+                                    self.data.Low[-1] < self.data.Low[-2])
+
+            if is_asia_range_small and grabbed_asia_high and is_bearish_engulfing:
+                sl = self.data.High[-1] * (1 + self.sl_buffer_pct / 100)
+                tp1 = self.data.Asia_Low[-1]
+                size = self._calculate_position_size(sl)
+
+                if tp1 < self.data.Close[-1] and size > 0:
+                    self.sell(sl=sl, tp=tp1, size=size)
+
+            # --- LONG ENTRY LOGIC ---
+            grabbed_asia_low = self.data.Low[-1] < self.data.Asia_Low[-1]
+            # More robust engulfing: current candle's high/low engulfs previous high/low
+            is_bullish_engulfing = (self.data.Close[-1] > self.data.Open[-1] and
+                                    self.data.High[-1] > self.data.High[-2] and
+                                    self.data.Low[-1] < self.data.Low[-2])
+
+            if is_asia_range_small and grabbed_asia_low and is_bullish_engulfing:
+                sl = self.data.Low[-1] * (1 - self.sl_buffer_pct / 100)
+                tp1 = self.data.Asia_High[-1]
+                size = self._calculate_position_size(sl)
+
+                if tp1 > self.data.Close[-1] and size > 0:
+                    self.buy(sl=sl, tp=tp1, size=size)
 
 
 if __name__ == '__main__':
-    # Load or generate data
-    data = generate_forex_data()
-
-    # Preprocess data
+    # Generate and preprocess data
+    data = generate_synthetic_data(days=365 * 2) # 2 years of data
     data = preprocess_data(data)
 
-    # Define session categories and factorize to get consistent integer codes
-    session_categories = ['Asia', 'UK', 'US']
-    # Use pd.Categorical to ensure the order and get codes
-    data['session'] = pd.Categorical(data['session'], categories=session_categories, ordered=True)
-    session_codes = data['session'].cat.codes
-    data['session'] = session_codes
-
-    # Get the integer code for the UK session to pass to the strategy
-    uk_session_code = session_categories.index('UK')
-
-    # Run backtest, passing the UK session code to the strategy
-    bt = Backtest(data, SessionLiquidityGrabReversalStrategy, cash=10000, commission=.002)
+    # Run backtest
+    bt = Backtest(data, SessionLiquidityGrabReversalStrategy, cash=100_000, commission=.002, finalize_trades=True)
 
     # Optimize
     stats = bt.optimize(
-        sl_buffer_pct=np.arange(0.01, 0.1, 0.01).tolist(),
-        uk_session_code=uk_session_code, # Pass as a single value
-        maximize='Sharpe Ratio'
+        asia_range_max_pct=np.arange(0.5, 3.0, 0.5).tolist(),
+        sl_buffer_pct=np.arange(0.01, 0.1, 0.02).tolist(),
+        maximize='Sharpe Ratio',
+        constraint=lambda p: p.asia_range_max_pct > 0
     )
 
-    # Save results
-    import os
-    os.makedirs('results', exist_ok=True)
-    sanitized_results = sanitize_stats(stats)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(sanitized_results, f, indent=2)
+    print("Best stats:", stats)
 
-    # Generate plot, handling potential errors
-    try:
-        bt.plot()
-    except TypeError as e:
-        print(f"Could not generate plot due to a TypeError (often a pandas/plotting library incompatibility): {e}")
+    # Create results directory if it doesn't exist
+    os.makedirs('results', exist_ok=True)
+
+    # Save results to JSON
+    # Handle cases where no trades are made
+    final_stats = {
+        'strategy_name': 'session_liquidity_grab_reversal',
+        'return': stats.get('Return [%]', 0.0),
+        'sharpe': stats.get('Sharpe Ratio', 0.0),
+        'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
+        'win_rate': stats.get('Win Rate [%]', 0.0),
+        'total_trades': stats.get('# Trades', 0)
+    }
+
+    with open('results/temp_result.json', 'w') as f:
+        # Cast numpy types to native python types for JSON serialization
+        for key, value in final_stats.items():
+            if isinstance(value, (np.int64, np.int32)):
+                final_stats[key] = int(value)
+            elif isinstance(value, (np.float64, np.float32)):
+                final_stats[key] = float(value)
+        json.dump(final_stats, f, indent=2)
+
+    # Generate plot
+    plot_filename = 'results/session_liquidity_grab_reversal.html'
+    bt.plot(filename=plot_filename, open_browser=False)
+    print(f"Plot saved to {plot_filename}")
