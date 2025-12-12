@@ -1,212 +1,205 @@
-from backtesting import Backtest, Strategy
-from backtesting.test import GOOG
-import pandas as pd
 import numpy as np
+import pandas as pd
 import json
-from scipy.signal import find_peaks
+from backtesting import Backtest, Strategy
+import os
 
-def preprocess_data(data, peak_distance=200): # Increased distance for HTF simulation
+def generate_synthetic_data(n_patterns=20, points_per_pattern=100, noise_level=0.05):
     """
-    Identifies swing highs and lows using scipy.signal.find_peaks.
+    Generates synthetic OHLC data with M-shaped patterns suitable for testing
+    the Fibonacci Center Peak Scalp strategy.
     """
-    # Find peaks (swing highs)
-    high_peaks_indices, _ = find_peaks(data.High, distance=peak_distance)
-    data['swing_high'] = False
-    data.iloc[high_peaks_indices, data.columns.get_loc('swing_high')] = True
+    close_prices = []
+    base_price = 100
 
-    # Find troughs (swing lows)
-    low_peaks_indices, _ = find_peaks(-data.Low, distance=peak_distance)
-    data['swing_low'] = False
-    data.iloc[low_peaks_indices, data.columns.get_loc('swing_low')] = True
+    for _ in range(n_patterns):
+        # A: Initial high
+        p_a = base_price + np.random.uniform(5, 10)
+        # B: Initial low
+        p_b = p_a - np.random.uniform(10, 20)
+        # C: Retracement high to 50% of A-B drop
+        p_c = p_b + 0.5 * (p_a - p_b) + np.random.uniform(-0.5, 0.5)
+        # D: Final low, lower than B
+        p_d = p_b - np.random.uniform(2, 5)
 
-    return data
+        segment1 = np.linspace(base_price, p_a, points_per_pattern // 4)
+        segment2 = np.linspace(p_a, p_b, points_per_pattern // 4)
+        segment3 = np.linspace(p_b, p_c, points_per_pattern // 4)
+        segment4 = np.linspace(p_c, p_d, points_per_pattern // 4)
+
+        close_prices.extend(np.concatenate([segment1, segment2, segment3, segment4]))
+        base_price = p_d
+
+    close_prices = np.array(close_prices)
+    noise = np.random.normal(0, noise_level, len(close_prices))
+    close_prices += noise
+
+    df = pd.DataFrame(index=pd.date_range(start='2023-01-01', periods=len(close_prices), freq='15min'))
+    df['Close'] = close_prices
+    df['Open'] = df['Close'].shift(1).fillna(method='bfill')
+    df['High'] = pd.Series([max(o, c) for o, c in zip(df['Open'], df['Close'])], index=df.index) + np.random.uniform(0, noise_level * 2, len(df))
+    df['Low'] = pd.Series([min(o, c) for o, c in zip(df['Open'], df['Close'])], index=df.index) - np.random.uniform(0, noise_level * 2, len(df))
+
+    return df[['Open', 'High', 'Low', 'Close']]
+
+def position_size(equity, risk_pct, stop_loss_price, entry_price):
+    """Calculates position size based on fixed fractional risk."""
+    risk_amount = equity * risk_pct
+    risk_per_share = abs(entry_price - stop_loss_price)
+    if risk_per_share == 0:
+        return 0
+    size = risk_amount / risk_per_share
+    return max(0, int(size)) # Ensure non-negative integer size
 
 class FibonacciCenterPeakScalpStrategy(Strategy):
-    """
-    Implements the Fibonacci Center Peak Scalp trading strategy.
-    """
-    # Add optimizable parameters
-    ema_period = 200
-    rr_ratio = 5
-    ema_aoi_tolerance = 0.01 # 1% tolerance for EMA alignment
-    fib_tolerance = 0.05 # 5% tolerance for Fib level
+    # --- Strategy Parameters ---
+    # How many bars to look left and right to confirm a swing point
+    swing_confirmation = 5
+    # Tolerance for Fibonacci level matching (e.g., 0.05 = 5%)
+    fib_tolerance = 0.05
 
     def init(self):
-        """
-        Initializes the strategy.
-        """
-        # Indicators
-        self.ema = self.I(lambda x, n: pd.Series(x).ewm(span=n, adjust=False).mean(), self.data.Close, self.ema_period)
-        # State management
-        self.p1_high = None
-        self.p1_low = None
-        self.p2_high = None
-        self.setup_active = False
+        # State machine for M-pattern detection
+        self.state = 'SCANNING_A' # Initial state
+        self.point_a = None
+        self.point_b = None
+        self.point_c = None
 
-        # Pre-processed indicators
-        self.swing_highs = self.I(lambda x: x, self.data.df['swing_high'], name='swing_high')
-        self.swing_lows = self.I(lambda x: x, self.data.df['swing_low'], name='swing_low')
+        # Store index of points for time-based checks
+        self.idx_a = None
+        self.idx_b = None
+        self.idx_c = None
+
+    def is_swing_high(self, index_offset):
+        """ Checks if a point `index_offset` bars ago is a swing high. """
+        if len(self.data.High) < 2 * self.swing_confirmation + 1:
+            return False
+
+        window = self.data.High[-(2 * self.swing_confirmation + 1) + index_offset : index_offset if index_offset != 0 else None]
+        if len(window) == 0: return False
+
+        center_index = self.swing_confirmation
+        return window[center_index] == max(window)
+
+    def is_swing_low(self, index_offset):
+        """ Checks if a point `index_offset` bars ago is a swing low. """
+        if len(self.data.Low) < 2 * self.swing_confirmation + 1:
+            return False
+
+        window = self.data.Low[-(2 * self.swing_confirmation + 1) + index_offset : index_offset if index_offset != 0 else None]
+        if len(window) == 0: return False
+
+        center_index = self.swing_confirmation
+        return window[center_index] == min(window)
 
     def next(self):
-        """
-        Defines the logic for the next trading iteration.
-        """
-        # If a position is open, we wait for it to close.
-        if self.position:
+        # We use a lag `swing_confirmation` to confirm a swing point without lookahead bias
+        current_bar_index = len(self.data.Close) - 1
+        eval_bar_index = current_bar_index - self.swing_confirmation
+        if eval_bar_index < 0:
             return
 
-        # If a setup was active but we no longer have a position, it means the trade just closed.
-        if self.setup_active:
-            # Check if the last closed trade was a profitable short (implying TP hit for the bag flip)
-            if len(self.closed_trades) > 0:
-                last_trade = self.closed_trades[-1]
-                if last_trade.is_short and last_trade.pl > 0:
-                    # Bag Flip: Immediately open a LONG position with managed risk
-                    entry_price = self.data.Close[-1]
-                    # Place SL below the recent swing low that was the TP for the short
-                    stop_loss = self.p1_low * 0.999
-                    # Target the peak of the previous setup
-                    take_profit = self.p2_high
+        # --- State Machine for M-Pattern Detection ---
 
-                    if entry_price > stop_loss and entry_price < take_profit:
-                        self.buy(size=last_trade.size, sl=stop_loss, tp=take_profit)
+        # State: SCANNING_A - Looking for the first major peak (Point A)
+        if self.state == 'SCANNING_A':
+            if self.is_swing_high(0):
+                self.point_a = self.data.High[-self.swing_confirmation-1]
+                self.idx_a = eval_bar_index
+                self.state = 'SCANNING_B'
 
-            self._reset_state()
-            return
+        # State: SCANNING_B - Looking for a swing low after Point A
+        elif self.state == 'SCANNING_B':
+            if self.is_swing_low(0):
+                self.point_b = self.data.Low[-self.swing_confirmation-1]
+                self.idx_b = eval_bar_index
+                self.state = 'SCANNING_C'
+            # Invalidation: If a new higher high is made, reset and look for a new A
+            elif self.is_swing_high(0) and self.data.High[-self.swing_confirmation-1] > self.point_a:
+                self.point_a = self.data.High[-self.swing_confirmation-1]
+                self.idx_a = eval_bar_index
 
-        # --- PATTERN RECOGNITION AND ENTRY ---
+        # State: SCANNING_C - Looking for a retracement peak after Point B
+        elif self.state == 'SCANNING_C':
+            if self.is_swing_high(0):
+                p_c_candidate = self.data.High[-self.swing_confirmation-1]
+                # Validation: Point C must be lower than Point A for an M-pattern
+                if p_c_candidate < self.point_a:
+                    self.point_c = p_c_candidate
+                    self.idx_c = eval_bar_index
+                    self.state = 'VALIDATING'
+                else: # Invalid M-pattern (higher high), reset
+                    self.state = 'SCANNING_A'
+            # Invalidation: If a new lower low is made, reset B
+            elif self.is_swing_low(0) and self.data.Low[-self.swing_confirmation-1] < self.point_b:
+                self.point_b = self.data.Low[-self.swing_confirmation-1]
+                self.idx_b = eval_bar_index
 
-        # Step 1: Find P1 High
-        if self.swing_highs[-1]:
-            self.p1_high = self.data.High[-1]
-            self.p1_low = None  # Reset to find the next low
+        # State: VALIDATING - We have A, B, and C. Check Fibonacci levels.
+        if self.state == 'VALIDATING':
+            # Calculate Fib 1 from A to B
+            fib1_range = self.point_a - self.point_b
+            if fib1_range > 0:
+                fib1_50 = self.point_a - 0.5 * fib1_range
 
-        # Step 2: Find subsequent P1 Low
-        if self.p1_high and not self.p1_low and self.swing_lows[-1]:
-            if self.data.Low[-1] < self.p1_high:
-                self.p1_low = self.data.Low[-1]
-            else: # A new high was made, reset P1
-                self.p1_high = self.data.High[-1]
+                # Check if C is within tolerance of the 50% level
+                if abs(self.point_c - fib1_50) <= fib1_range * self.fib_tolerance:
+                    # SETUP CONFIRMED: Now wait for entry trigger on the current bar
+                    # This simulates dropping to 1M and finding a reversal.
+                    # A simple trigger is a bearish candle (Close < Open).
+                    if self.data.Close[-1] < self.data.Open[-1] and not self.position:
+                        entry_price = self.data.Close[-1]
 
-        # Step 3: Find P2 High after retracement and enter trade
-        if self.p1_high and self.p1_low and not self.p2_high:
-            fib_level_38 = self.p1_low + 0.382 * (self.p1_high - self.p1_low)
-            fib_level_50 = self.p1_low + 0.5 * (self.p1_high - self.p1_low)
-            fib_level_61 = self.p1_low + 0.618 * (self.p1_high - self.p1_low)
+                        # SL is just above peak C
+                        sl = self.point_c * 1.002
 
-            if self.swing_highs[-1]:
-                self.p2_high = self.data.High[-1]
+                        # TP is 50% of Fib 2 (from B to C)
+                        fib2_range = self.point_c - self.point_b
+                        tp = self.point_c - 0.5 * fib2_range
 
-                # Fibonacci Level Confirmation
-                if not (fib_level_50 * (1 - self.fib_tolerance) <= self.p2_high <= fib_level_50 * (1 + self.fib_tolerance)):
-                    self._reset_state() # P2 peak is not at the 50% fib level, invalidate
-                    return
+                        # Ensure SL/TP are valid for a short position
+                        if sl > entry_price and tp < entry_price:
+                            size = position_size(self.equity, 0.02, sl, entry_price)
+                            if size > 0:
+                                self.sell(size=size, sl=sl, tp=tp)
 
-                # EMA Confirmation
-                ema_value_at_p2 = self.ema[-1]
-                price_at_p2 = self.p2_high
-                if not (abs(price_at_p2 - ema_value_at_p2) / price_at_p2 <= self.ema_aoi_tolerance):
-                    self._reset_state() # EMA not aligned, invalidate
-                    return
-
-                # --- ENTRY LOGIC ---
-                entry_price = self.data.Close[-1]
-                stop_loss = self.p2_high * 1.001
-                take_profit = self.p1_low + 0.5 * (self.p2_high - self.p1_low)
-
-                if entry_price >= stop_loss or entry_price <= take_profit:
-                    self._reset_state()
-                    return
-
-                risk = abs(entry_price - stop_loss)
-                reward = abs(entry_price - take_profit)
-
-                if risk > 0 and reward / risk >= self.rr_ratio:
-                    size = (self.equity * 0.02) / risk
-                    self.sell(size=size, sl=stop_loss, tp=take_profit)
-                    self.setup_active = True
-
-    def _reset_state(self):
-        """Resets the state of the pattern recognition."""
-        self.p1_high = None
-        self.p1_low = None
-        self.p2_high = None
-        self.setup_active = False
-
-def generate_synthetic_data():
-    """
-    Generates synthetic data with a clear P1 drop -> retracement -> P2 peak pattern.
-    """
-    n = 2000 # More data points for finer resolution
-    index = pd.to_datetime(pd.date_range('2022-01-01', periods=n, freq='1min'))
-    data = pd.DataFrame(index=index)
-
-    # Base price with some noise
-    price = 100 + np.cumsum(np.random.randn(n) * 0.1)
-    data['Open'] = price
-    data['High'] = price + np.random.uniform(0, 0.5, n)
-    data['Low'] = price - np.random.uniform(0, 0.5, n)
-    data['Close'] = price + np.random.randn(n) * 0.2
-    data['Volume'] = np.random.randint(100, 1000, n)
-
-    # Create the P1 drop
-    p1_high_idx = 200
-    p1_low_idx = 400
-    data.loc[data.index[p1_high_idx:p1_low_idx], 'Close'] -= np.linspace(0, 10, p1_low_idx - p1_high_idx)
-
-    # Create the retracement to P2 peak
-    p2_peak_idx = 500
-    p1_high = data['Close'].iloc[p1_high_idx]
-    p1_low = data['Close'].iloc[p1_low_idx]
-    retracement_target = p1_low + 0.5 * (p1_high - p1_low)
-
-    # Linearly move price to the retracement target
-    current_price = data['Close'].iloc[p1_low_idx]
-    price_move = np.linspace(current_price, retracement_target, p2_peak_idx - p1_low_idx)
-    data.loc[data.index[p1_low_idx:p2_peak_idx], 'Close'] = price_move
-
-    # Create the subsequent drop
-    data.loc[data.index[p2_peak_idx:], 'Close'] -= np.linspace(0, 5, n - p2_peak_idx)
-
-    # Ensure OHLC consistency
-    data['High'] = data[['Open', 'Close']].max(axis=1) + np.random.uniform(0, 0.2, n)
-    data['Low'] = data[['Open', 'Close']].min(axis=1) - np.random.uniform(0, 0.2, n)
-
-    return data
+            # Whether trade was taken or validation failed, reset the state machine
+            self.state = 'SCANNING_A'
 
 if __name__ == '__main__':
-    # Load or generate data
-    data = generate_synthetic_data()
-    # Pass a larger peak distance to simulate HTF analysis
-    data = preprocess_data(data, peak_distance=100)
+    data = generate_synthetic_data(n_patterns=50)
 
-    # Run backtest
-    bt = Backtest(data, FibonacciCenterPeakScalpStrategy, cash=10000, commission=.002)
+    bt = Backtest(data, FibonacciCenterPeakScalpStrategy, cash=100000, commission=.002)
 
-    # Optimize
+    print("Optimizing strategy...")
     stats = bt.optimize(
-        ema_period=range(50, 250, 50),
-        rr_ratio=range(3, 8, 1),
-        ema_aoi_tolerance=[i * 0.005 for i in range(1, 5)], # 0.5% to 2.0%
-        fib_tolerance=[i * 0.01 for i in range(1, 6)], # 1% to 5%
-        maximize='Sharpe Ratio'
+        swing_confirmation=range(3, 15, 2),
+        fib_tolerance=[i/100 for i in range(2, 8)], # 0.02 to 0.07
+        maximize='Sharpe Ratio',
+        constraint=lambda p: p.swing_confirmation > 0
     )
 
-    # Save results
-    import os
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
-            'strategy_name': 'fibonacci_center_peak_scalp',
-            'return': float(stats.get('Return [%]', 0)),
-            'sharpe': float(stats.get('Sharpe Ratio', 0)),
-            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)),
-            'win_rate': float(stats.get('Win Rate [%]', 0)),
-            'total_trades': int(stats.get('# Trades', 0))
-        }, f, indent=2)
+    print("\nBest Run Stats:")
+    print(stats)
 
-    # Generate plot
-    try:
-        bt.plot()
-    except Exception as e:
-        print(f"Error plotting: {e}")
+    results_dir = 'results'
+    os.makedirs(results_dir, exist_ok=True)
+
+    result_data = {
+        'strategy_name': 'fibonacci_center_peak_scalp',
+        'return': float(stats.get('Return [%]', 0.0)),
+        'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
+        'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
+        'win_rate': float(stats.get('Win Rate [%]', 0.0)),
+        'total_trades': int(stats.get('# Trades', 0))
+    }
+
+    if result_data['total_trades'] == 0:
+        print("Warning: No trades were executed during the backtest.")
+
+    with open(os.path.join(results_dir, 'temp_result.json'), 'w') as f:
+        json.dump(result_data, f, indent=2)
+
+    print(f"Results saved to {os.path.join(results_dir, 'temp_result.json')}")
+
+    bt.plot(filename="fibonacci_center_peak_scalp_plot")
