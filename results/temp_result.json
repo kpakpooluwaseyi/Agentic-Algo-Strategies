@@ -1,8 +1,12 @@
 {
-  "strategy_name": "silver_bullet_fvg_retest",
-  "return": 2.9767299413022736,
-  "sharpe": 0.8731292993796814,
-  "max_drawdown": -8.336646498721134,
-  "win_rate": 17.857142857142858,
-  "total_trades": 28
+  "strategy_name": "market_maker_3_level_cycle_w_m_formation",
+  "return": 17.526937200000084,
+  "sharpe": 0.26530297984992113,
+  "max_drawdown": -20.40116889407194,
+  "win_rate": 50.0,
+  "total_trades": 26,
+  "parameters": {
+    "pivot_lookback": 10,
+    "risk_reward_ratio": 2.5
+  }
 }
