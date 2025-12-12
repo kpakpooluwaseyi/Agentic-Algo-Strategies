@@ -21,5 +21,9 @@ scipy
 backtesting
 >>>>>>> main
 # Add any other dependencies your agents need
+<<<<<<< HEAD
+backtesting
+=======
 Backtesting
 scipy
+>>>>>>> main
