@@ -1,8 +1,8 @@
 {
-  "strategy_name": "silver_bullet_fvg_retest",
-  "return": 2.9767299413022736,
-  "sharpe": 0.8731292993796814,
-  "max_drawdown": -8.336646498721134,
-  "win_rate": 17.857142857142858,
-  "total_trades": 28
+  "strategy_name": "corrective_wave_fade_with_volume_divergence",
+  "return": -15.978123474479187,
+  "sharpe": -1.1909722840029202,
+  "max_drawdown": -18.63459514499214,
+  "win_rate": 50.0,
+  "total_trades": 2
 }
