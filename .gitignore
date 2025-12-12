@@ -99,7 +99,11 @@ src/audio
 results/*.csv
 =======
 
+<<<<<<< HEAD
+# Generated backtest artifacts
+=======
 # Generated artifacts
+>>>>>>> main
 results/
 *.html
 >>>>>>> main
