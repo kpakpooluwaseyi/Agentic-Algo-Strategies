@@ -1,8 +1,8 @@
 {
-  "strategy_name": "silver_bullet_fvg_retest",
-  "return": 2.9767299413022736,
-  "sharpe": 0.8731292993796814,
-  "max_drawdown": -8.336646498721134,
-  "win_rate": 17.857142857142858,
-  "total_trades": 28
+  "strategy_name": "session_liquidity_grab_reversal",
+  "return": -13.388725451148872,
+  "sharpe": -19.42259137226581,
+  "max_drawdown": -13.41300667958597,
+  "win_rate": 2.7027027027027026,
+  "total_trades": 37
 }
