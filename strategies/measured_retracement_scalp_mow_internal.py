@@ -141,6 +141,8 @@ class MeasuredRetracementScalpMowInternalStrategy(Strategy):
 if __name__ == '__main__':
     data_1m = generate_synthetic_data()
 
+    os.makedirs('results', exist_ok=True)
+
     best_stats = None
     best_prominence = None
 
@@ -149,12 +151,6 @@ if __name__ == '__main__':
             processed_data = preprocess_data(data_1m.copy(), peak_prominence=prominence)
             if processed_data.empty or processed_data['aoi'].isnull().all():
                 continue
-
-            bt = Backtest(processed_data, MeasuredRetracementScalpMowInternalStrategy, cash=100_000, commission=.002)
-            stats = bt.optimize(ema_period=range(20, 100, 20),
-                                rr_ratio=range(3, 8, 1),
-                                maximize='Sharpe Ratio',
-                                max_tries=50)
 
             bt = Backtest(processed_data, MeasuredRetracementScalpMowInternalStrategy, cash=100_000, commission=.002)
             stats = bt.optimize(ema_period=range(20, 100, 20),
