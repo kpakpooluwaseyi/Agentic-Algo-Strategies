@@ -102,26 +102,19 @@ if __name__ == '__main__':
         np.random.seed(42)
         time_index = pd.date_range(start='2023-01-01', periods=periods, freq='min')
         price = 100
-        data = []
 
         # Base trend
         base = price + np.cumsum(np.random.randn(periods) * 0.05)
 
         if m_pattern:
             # M-Pattern (for short setup)
-            # Level Drop
             base[100:200] -= np.linspace(0, 10, 100)
-            # Retracement (Center Peak)
-            base[200:300] += np.linspace(0, 6, 100) # Retraces past 50%
-            # Second Drop
+            base[200:300] += np.linspace(0, 6, 100)
             base[300:400] -= np.linspace(0, 12, 100)
         else:
             # W-Pattern (for long setup)
-            # Level Rise
             base[100:200] += np.linspace(0, 10, 100)
-            # Retracement (Center Trough)
-            base[200:300] -= np.linspace(0, 6, 100) # Retraces past 50%
-            # Second Rise
+            base[200:300] -= np.linspace(0, 6, 100)
             base[300:400] += np.linspace(0, 12, 100)
 
         df = pd.DataFrame({'Close': base}, index=time_index)
@@ -130,8 +123,6 @@ if __name__ == '__main__':
         df['Low'] = df[['Open', 'Close']].min(axis=1) - np.random.uniform(0, 0.2, size=len(df))
         return df
 
-    # Generate synthetic data for M-pattern (short trade)
-    # Switch to `m_pattern=False` to test the long logic
     data = generate_synthetic_data(m_pattern=False)
 
     def preprocess_data(df_1m):
@@ -140,7 +131,6 @@ if __name__ == '__main__':
         """
         df_15m = df_1m['Close'].resample('15min').ohlc().dropna()
 
-        # Find peaks (swing highs) and troughs (swing lows) on the 15M timeframe
         peak_indices, _ = find_peaks(df_15m['high'], prominence=1, distance=3)
         trough_indices, _ = find_peaks(-df_15m['low'], prominence=1, distance=3)
 
@@ -154,10 +144,8 @@ if __name__ == '__main__':
         df_15m.iloc[peak_indices, df_15m.columns.get_loc('swing_high_t')] = df_15m.index[peak_indices]
         df_15m.iloc[trough_indices, df_15m.columns.get_loc('swing_low_t')] = df_15m.index[trough_indices]
 
-        # Forward fill to carry the last swing point forward
         df_15m.ffill(inplace=True)
 
-        # Merge the 15M context into the 1M data
         df_merged = pd.merge_asof(df_1m, df_15m[['peak_price', 'trough_price', 'swing_high_t', 'swing_low_t']],
                                   left_index=True, right_index=True, direction='backward')
         df_merged.rename(columns={'peak_price': 'peak_price_15m', 'trough_price': 'trough_price_15m',
@@ -169,7 +157,6 @@ if __name__ == '__main__':
     import os
     os.makedirs('results', exist_ok=True)
 
-    # Save preprocessed data for debugging
     data.to_csv('results/preprocessed_data.csv')
 
     bt = Backtest(data, FibonacciCenterPeakScalpStrategy, cash=100_000, commission=.002)
