@@ -1,8 +1,8 @@
 {
-  "strategy_name": "silver_bullet_fvg_retest",
-  "return": 2.9767299413022736,
-  "sharpe": 0.8731292993796814,
-  "max_drawdown": -8.336646498721134,
-  "win_rate": 17.857142857142858,
-  "total_trades": 28
+  "strategy_name": "mow_center_peak_scalp",
+  "return": 376.6332890000005,
+  "sharpe": 0.8128325016638968,
+  "max_drawdown": -29.882635170325155,
+  "win_rate": 36.231884057971016,
+  "total_trades": 69
 }
