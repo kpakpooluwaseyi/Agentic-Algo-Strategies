@@ -130,49 +130,87 @@ class BitcoinMonthlyMoonPivotStrategy(Strategy):
 
 
 if __name__ == '__main__':
-    from backtesting import Backtest
-    import pandas as pd
-    import numpy as np
-    import json
     import os
-
-    # --- Generate Synthetic Data ---
-    def generate_synthetic_data(start_date='2020-01-01', end_date='2024-12-31'):
-        dates = pd.date_range(start=start_date, end=end_date, freq='D')
-        price = 10000 + np.random.randn(len(dates)).cumsum() * 100
-        data = pd.DataFrame({
-            'Open': price,
-            'High': price + np.abs(np.random.randn(len(dates)) * 50),
-            'Low': price - np.abs(np.random.randn(len(dates)) * 50),
-            'Close': price + np.random.randn(len(dates)) * 20,
-            'Volume': np.random.randint(100, 1000, len(dates))
-        }, index=dates)
-        return data
-
-    data = generate_synthetic_data()
-
-    # --- Run Backtest and Optimization ---
-    bt = Backtest(data, BitcoinMonthlyMoonPivotStrategy, cash=1_000_000, commission=.002)
-
-    stats = bt.optimize(rr=range(2, 5, 1),
-                        maximize='Sharpe Ratio')
-
-    # --- Output Results ---
-    print(stats)
-    os.makedirs('results', exist_ok=True)
-
-    # Handle cases where no trades were made
-    win_rate = stats['Win Rate [%]'] if stats['# Trades'] > 0 else 0
-    sharpe = stats['Sharpe Ratio'] if stats['# Trades'] > 0 else 0
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, BitcoinMonthlyMoonPivotStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'bitcoin_monthly_moon_pivot',
-            'return': stats['Return [%]'],
-            'sharpe': sharpe,
-            'max_drawdown': stats['Max. Drawdown [%]'],
-            'win_rate': win_rate,
-            'total_trades': stats['# Trades']
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        from backtesting import Backtest
+        import pandas as pd
+        import numpy as np
+        import json
+        import os
 
-    bt.plot(filename='results/moon_pivot_plot.html')
+        # --- Generate Synthetic Data ---
+        def generate_synthetic_data(start_date='2020-01-01', end_date='2024-12-31'):
+            dates = pd.date_range(start=start_date, end=end_date, freq='D')
+            price = 10000 + np.random.randn(len(dates)).cumsum() * 100
+            data = pd.DataFrame({
+                'Open': price,
+                'High': price + np.abs(np.random.randn(len(dates)) * 50),
+                'Low': price - np.abs(np.random.randn(len(dates)) * 50),
+                'Close': price + np.random.randn(len(dates)) * 20,
+                'Volume': np.random.randint(100, 1000, len(dates))
+            }, index=dates)
+            return data
+
+        data = generate_synthetic_data()
+
+        # --- Run Backtest and Optimization ---
+        bt = Backtest(data, BitcoinMonthlyMoonPivotStrategy, cash=1_000_000, commission=.002)
+
+        stats = bt.optimize(rr=range(2, 5, 1),
+                            maximize='Sharpe Ratio')
+
+        # --- Output Results ---
+        print(stats)
+        os.makedirs('results', exist_ok=True)
+
+        # Handle cases where no trades were made
+        win_rate = stats['Win Rate [%]'] if stats['# Trades'] > 0 else 0
+        sharpe = stats['Sharpe Ratio'] if stats['# Trades'] > 0 else 0
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'bitcoin_monthly_moon_pivot',
+                'return': stats['Return [%]'],
+                'sharpe': sharpe,
+                'max_drawdown': stats['Max. Drawdown [%]'],
+                'win_rate': win_rate,
+                'total_trades': stats['# Trades']
+            }, f, indent=2)
+
+        bt.plot(filename='results/moon_pivot_plot.html')

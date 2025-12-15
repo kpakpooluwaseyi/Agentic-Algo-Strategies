@@ -123,42 +123,80 @@ class Ema50PullbackEngulfingContinuationStrategy(Strategy):
                                     self.sell(sl=stop_loss, tp=take_profit)
 
 if __name__ == '__main__':
-    # Load sample data
-    data = GOOG.copy()
-
-    # Initialize the backtest
-    bt = Backtest(data, Ema50PullbackEngulfingContinuationStrategy, cash=10000, commission=.002)
-
-    # Optimize the strategy parameters
-    stats = bt.optimize(
-        ema_period=range(30, 70, 10),
-        rr_ratio=list(np.arange(1.5, 3.0, 0.5)),
-        maximize='Sharpe Ratio'
-    )
-
-    # Ensure the results directory exists
-    os.makedirs('results', exist_ok=True)
-
-    # Sanitize the stats for JSON serialization
-    sanitized_stats = sanitize_stats(stats)
-
-    # Save the results to a JSON file
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, Ema50PullbackEngulfingContinuationStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'ema_50_pullback_engulfing_continuation',
-            'return': sanitized_stats.get('Return [%]'),
-            'sharpe': sanitized_stats.get('Sharpe Ratio'),
-            'max_drawdown': sanitized_stats.get('Max. Drawdown [%]'),
-            'win_rate': sanitized_stats.get('Win Rate [%]'),
-            'total_trades': sanitized_stats.get('# Trades')
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Load sample data
+        data = GOOG.copy()
 
-    print("Backtest results saved to results/temp_result.json")
+        # Initialize the backtest
+        bt = Backtest(data, Ema50PullbackEngulfingContinuationStrategy, cash=10000, commission=.002)
 
-    # Generate and save the plot
-    try:
-        plot_filename = 'results/ema_50_pullback_engulfing_continuation.html'
-        bt.plot(filename=plot_filename, open_browser=False)
-        print(f"Backtest plot saved to {plot_filename}")
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        # Optimize the strategy parameters
+        stats = bt.optimize(
+            ema_period=range(30, 70, 10),
+            rr_ratio=list(np.arange(1.5, 3.0, 0.5)),
+            maximize='Sharpe Ratio'
+        )
+
+        # Ensure the results directory exists
+        os.makedirs('results', exist_ok=True)
+
+        # Sanitize the stats for JSON serialization
+        sanitized_stats = sanitize_stats(stats)
+
+        # Save the results to a JSON file
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'ema_50_pullback_engulfing_continuation',
+                'return': sanitized_stats.get('Return [%]'),
+                'sharpe': sanitized_stats.get('Sharpe Ratio'),
+                'max_drawdown': sanitized_stats.get('Max. Drawdown [%]'),
+                'win_rate': sanitized_stats.get('Win Rate [%]'),
+                'total_trades': sanitized_stats.get('# Trades')
+            }, f, indent=2)
+
+        print("Backtest results saved to results/temp_result.json")
+
+        # Generate and save the plot
+        try:
+            plot_filename = 'results/ema_50_pullback_engulfing_continuation.html'
+            bt.plot(filename=plot_filename, open_browser=False)
+            print(f"Backtest plot saved to {plot_filename}")
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

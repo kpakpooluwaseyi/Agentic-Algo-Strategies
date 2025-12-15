@@ -223,39 +223,77 @@ def sanitize_for_json(obj):
 
 
 if __name__ == '__main__':
-    data = generate_synthetic_data()
-
-    bt = Backtest(data, M15EmaStructureRetestStrategy, cash=100_000, commission=.002)
-
-    stats = bt.optimize(
-        ema_fast_period=range(40, 61, 10),
-        ema_slow_period=range(180, 221, 20),
-        swing_distance=range(10, 21, 5),
-        retest_tolerance=[i/1000 for i in range(5, 21, 5)],
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.ema_fast_period < p.ema_slow_period
-    )
-
-    print("Best Run Stats:")
-    print(stats)
-
-    results = sanitize_for_json(stats.to_dict())
-
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, M15EmaStructureRetestStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'm15_ema_structure_retest',
-            'return': results.get('Return [%]'),
-            'sharpe': results.get('Sharpe Ratio'),
-            'max_drawdown': results.get('Max. Drawdown [%]'),
-            'win_rate': results.get('Win Rate [%]'),
-            'total_trades': results.get('# Trades')
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = generate_synthetic_data()
 
-    print("\nResults saved to results/temp_result.json")
+        bt = Backtest(data, M15EmaStructureRetestStrategy, cash=100_000, commission=.002)
 
-    try:
-        bt.plot(filename="results/m15_ema_structure_retest", open_browser=False)
-        print("Plot saved to results/m15_ema_structure_retest.html")
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        stats = bt.optimize(
+            ema_fast_period=range(40, 61, 10),
+            ema_slow_period=range(180, 221, 20),
+            swing_distance=range(10, 21, 5),
+            retest_tolerance=[i/1000 for i in range(5, 21, 5)],
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.ema_fast_period < p.ema_slow_period
+        )
+
+        print("Best Run Stats:")
+        print(stats)
+
+        results = sanitize_for_json(stats.to_dict())
+
+        os.makedirs('results', exist_ok=True)
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'm15_ema_structure_retest',
+                'return': results.get('Return [%]'),
+                'sharpe': results.get('Sharpe Ratio'),
+                'max_drawdown': results.get('Max. Drawdown [%]'),
+                'win_rate': results.get('Win Rate [%]'),
+                'total_trades': results.get('# Trades')
+            }, f, indent=2)
+
+        print("\nResults saved to results/temp_result.json")
+
+        try:
+            bt.plot(filename="results/m15_ema_structure_retest", open_browser=False)
+            print("Plot saved to results/m15_ema_structure_retest.html")
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

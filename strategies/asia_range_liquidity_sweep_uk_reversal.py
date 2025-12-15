@@ -20,11 +20,16 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df.loc[(df.index.hour >= 8) & (df.index.hour < 16), 'session'] = 'UK'
 
     # Group by date to calculate daily Asia session stats
-    asia_session_data = df[df['session'] == 'Asia'].groupby(df.index.date)
-
-    daily_asia_high = asia_session_data['High'].max()
-    daily_asia_low = asia_session_data['Low'].min()
-    daily_asia_open = asia_session_data['Open'].first()
+    asia_df = df[df['session'] == 'Asia']
+    if len(asia_df) > 0:
+        asia_session_data = asia_df.groupby(asia_df.index.date)
+        daily_asia_high = asia_session_data['High'].max()
+        daily_asia_low = asia_session_data['Low'].min()
+        daily_asia_open = asia_session_data['Open'].first()
+    else:
+        daily_asia_high = pd.Series(dtype=float)
+        daily_asia_low = pd.Series(dtype=float)
+        daily_asia_open = pd.Series(dtype=float)
 
     # Create a daily DataFrame and then map it to the original index
     daily_stats = pd.DataFrame({

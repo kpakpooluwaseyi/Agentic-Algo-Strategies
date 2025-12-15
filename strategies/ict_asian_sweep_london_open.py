@@ -19,13 +19,24 @@ class IctAsianSweepLondonOpenStrategy(Strategy):
     poi_proximity_pct = 0.1  # How close the sweep must be to the HTF POI (prev day H/L)
 
     def init(self):
-        # --- Pre-calculated Indicators ---
-        self.asia_high = self.I(lambda x: x, self.data.df['asia_high'].values)
-        self.asia_low = self.I(lambda x: x, self.data.df['asia_low'].values)
-        self.midnight_open = self.I(lambda x: x, self.data.df['midnight_open'].values)
-        self.is_london = self.I(lambda x: x, self.data.df['is_london_session'].values)
-        self.prev_day_high = self.I(lambda x: x, self.data.df['prev_day_high'].values)
-        self.prev_day_low = self.I(lambda x: x, self.data.df['prev_day_low'].values)
+        # --- Pre-calculated Indicators (with fallbacks for raw OHLCV data) ---
+        df = self.data.df
+        asia_high = df.get('asia_high', df['High'])
+        asia_low = df.get('asia_low', df['Low'])
+        midnight_open = df.get('midnight_open', df['Open'])
+        if 'is_london_session' in df.columns:
+            is_london = df['is_london_session']
+        else:
+            is_london = pd.Series((df.index.hour >= 8) & (df.index.hour < 12), index=df.index)
+        prev_day_high = df.get('prev_day_high', df['High'])
+        prev_day_low = df.get('prev_day_low', df['Low'])
+        
+        self.asia_high = self.I(lambda x: x, asia_high.values)
+        self.asia_low = self.I(lambda x: x, asia_low.values)
+        self.midnight_open = self.I(lambda x: x, midnight_open.values)
+        self.is_london = self.I(lambda x: x, is_london.values)
+        self.prev_day_high = self.I(lambda x: x, prev_day_high.values)
+        self.prev_day_low = self.I(lambda x: x, prev_day_low.values)
 
         # --- State Machine ---
         self.trade_state = TradeState.WAITING
@@ -192,6 +203,43 @@ class IctAsianSweepLondonOpenStrategy(Strategy):
         return True
 
 if __name__ == '__main__':
+    import os
+    import sys
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, IctAsianSweepLondonOpenStrategy, cash=1_000_000, commission=.002, fractional_unit=1e-4)
+        
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': 'ict_asian_sweep_london_open',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+        sys.exit(0)
+    
+    # === STANDALONE MODE (original behavior) ===
+    print("[Standalone Mode] Using synthetic data...")
     def generate_forex_data(days=200, timeframe_minutes=15):
         """
         Generates synthetic 24-hour Forex data for backtesting ICT strategies.

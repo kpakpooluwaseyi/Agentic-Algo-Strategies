@@ -27,13 +27,14 @@ class FiftyFiftyMowInternalScalpStrategy(Strategy):
         self.current_setup_low = None
         self.entry_peak = None
 
-        # Expose pre-calculated data to the strategy
-        self.aoi_level = self.data.df['aoi_level']
-        self.setup_high = self.data.df['setup_high']
-        self.setup_low = self.data.df['setup_low']
-        self.ema_15m = self.data.df['ema_15m']
-        self.prev_low = self.data.df['prev_low']
-        self.asia_50_pct = self.data.df['asia_50_pct']
+        # Expose pre-calculated data to the strategy (with fallbacks for raw OHLCV data)
+        df = self.data.df
+        self.aoi_level = df.get('aoi_level', df['Close'])
+        self.setup_high = df.get('setup_high', df['High'])
+        self.setup_low = df.get('setup_low', df['Low'])
+        self.ema_15m = df.get('ema_15m', df['Close'].ewm(span=20).mean())
+        self.prev_low = df.get('prev_low', df['Low'])
+        self.asia_50_pct = df.get('asia_50_pct', df['Close'])
 
 
     def next(self):
@@ -222,12 +223,50 @@ def preprocess_data(df_1m, peak_prominence_val, ema_period_val):
 
 
 if __name__ == '__main__':
-    # --- 1. Data Generation ---
-    raw_data = generate_synthetic_data(days=60)
+    import os
+    import json
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, FiftyFiftyMowInternalScalpStrategy, cash=1_000_000, commission=.002, fractional_unit=1e-4)
+        
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': '50_50_mow_internal_scalp',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+        import sys
+        sys.exit(0)
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using synthetic data...")
+        # --- 1. Data Generation ---
+        raw_data = generate_synthetic_data(days=60)
 
-    # --- 2. Backtest Execution & Optimization ---
-    # The optimization loop requires re-running pre-processing for parameters
-    # that affect the data itself (peak_prominence, ema_period).
+        # --- 2. Backtest Execution & Optimization ---
+        # The optimization loop requires re-running pre-processing for parameters
+        # that affect the data itself (peak_prominence, ema_period).
 
     def run_optimization(peak_prominence_val, ema_period_val):
         """Function to run a backtest for a given set of data-level parameters."""

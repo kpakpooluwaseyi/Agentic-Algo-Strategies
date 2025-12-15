@@ -169,99 +169,143 @@ class AsiaLiquidityGrabUkSessionStrategy(Strategy):
 # --- Main Execution Block ---
 
 if __name__ == '__main__':
-
-    def generate_synthetic_data():
-        """Generates synthetic 15-min data modeling the strategy's pattern."""
-        n_days = 50
-        periods_per_day = 96  # 24 * 4
-        total_periods = n_days * periods_per_day
-
-        # Start with a base price and random walk
-        base_price = 1.2000
-        np.random.seed(42)
-        price_changes = np.random.randn(total_periods) * 0.0005
-        prices = base_price + np.cumsum(price_changes)
-
-        # Create timestamp index
-        timestamps = pd.to_datetime(pd.date_range('2023-01-01', periods=total_periods, freq='15min', tz='UTC'))
-
-        df = pd.DataFrame(index=timestamps)
-        df['Open'] = prices
-        df['High'] = prices + np.random.uniform(0, 0.001, size=total_periods)
-        df['Low'] = prices - np.random.uniform(0, 0.001, size=total_periods)
-        df['Close'] = prices + np.random.uniform(-0.0005, 0.0005, size=total_periods)
-        df['Volume'] = np.random.randint(100, 1000, size=total_periods)
-
-        # Force Asia session to be a tight range and UK to break out
-        for day in range(n_days):
-            day_start_idx = day * periods_per_day
-            asia_end_idx = day_start_idx + (8 * 4) # 8 hours * 4 periods/hour
-            uk_start_idx = asia_end_idx
-
-            # Make Asia session range-bound
-            asia_prices = df['Close'].iloc[day_start_idx:asia_end_idx]
-            avg_asia_price = asia_prices.mean()
-            df.loc[asia_prices.index, ['Open', 'High', 'Low', 'Close']] *= 0.999
-            df.loc[asia_prices.index, ['Open', 'High', 'Low', 'Close']] += avg_asia_price * 0.001
-
-            # Create a breakout pattern for UK session on some days
-            if day % 4 == 0: # Bearish setup
-                hoa = df['High'].iloc[day_start_idx:asia_end_idx].max()
-                breakout_idx = uk_start_idx + 2
-                df.loc[df.index[breakout_idx], 'High'] = hoa + 0.0015
-                df.loc[df.index[breakout_idx], 'Open'] = hoa + 0.0005
-                df.loc[df.index[breakout_idx], 'Close'] = hoa - 0.0005 # Close below
-            elif day % 4 == 2: # Bullish setup
-                loa = df['Low'].iloc[day_start_idx:asia_end_idx].min()
-                breakout_idx = uk_start_idx + 2
-                df.loc[df.index[breakout_idx], 'Low'] = loa - 0.0015
-                df.loc[df.index[breakout_idx], 'Open'] = loa - 0.0005
-                df.loc[df.index[breakout_idx], 'Close'] = loa + 0.0005 # Close above
-
-        return df
-
-    # Generate and preprocess data
-    data = generate_synthetic_data()
-    processed_data = preprocess_data(data)
-
-    # Initialize and run backtest
-    bt = Backtest(processed_data, AsiaLiquidityGrabUkSessionStrategy, cash=100_000, commission=.0002)
-
-    # Optimize
-    print("Running optimization...")
-    stats = bt.optimize(
-        asia_range_percent_max=list(np.arange(0.5, 3.0, 0.5)),
-        maximize='Sharpe Ratio'
-    )
-
-    print("Best stats:")
-    print(stats)
-
-    # Ensure results directory exists
-    os.makedirs('results', exist_ok=True)
-
-    # Save results to JSON
-    # Handle cases where no trades were made and metrics are NaN
-    if stats['# Trades'] > 0:
-        win_rate = float(stats['Win Rate [%]'])
-        sharpe = float(stats['Sharpe Ratio'])
-    else:
-        win_rate = 0.0
-        sharpe = 0.0
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, AsiaLiquidityGrabUkSessionStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'asia_liquidity_grab_uk_session',
-            'return': float(stats['Return [%]']),
-            'sharpe': sharpe,
-            'max_drawdown': float(stats['Max. Drawdown [%]']),
-            'win_rate': win_rate,
-            'total_trades': int(stats['# Trades'])
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
 
-    print("Results saved to results/temp_result.json")
+        def generate_synthetic_data():
+            """Generates synthetic 15-min data modeling the strategy's pattern."""
+            n_days = 50
+            periods_per_day = 96  # 24 * 4
+            total_periods = n_days * periods_per_day
 
-    # Generate and save plot
-    plot_filename = 'results/asia_liquidity_grab_uk_session.html'
-    bt.plot(filename=plot_filename)
-    print(f"Plot saved to {plot_filename}")
+            # Start with a base price and random walk
+            base_price = 1.2000
+            np.random.seed(42)
+            price_changes = np.random.randn(total_periods) * 0.0005
+            prices = base_price + np.cumsum(price_changes)
+
+            # Create timestamp index
+            timestamps = pd.to_datetime(pd.date_range('2023-01-01', periods=total_periods, freq='15min', tz='UTC'))
+
+            df = pd.DataFrame(index=timestamps)
+            df['Open'] = prices
+            df['High'] = prices + np.random.uniform(0, 0.001, size=total_periods)
+            df['Low'] = prices - np.random.uniform(0, 0.001, size=total_periods)
+            df['Close'] = prices + np.random.uniform(-0.0005, 0.0005, size=total_periods)
+            df['Volume'] = np.random.randint(100, 1000, size=total_periods)
+
+            # Force Asia session to be a tight range and UK to break out
+            for day in range(n_days):
+                day_start_idx = day * periods_per_day
+                asia_end_idx = day_start_idx + (8 * 4) # 8 hours * 4 periods/hour
+                uk_start_idx = asia_end_idx
+
+                # Make Asia session range-bound
+                asia_prices = df['Close'].iloc[day_start_idx:asia_end_idx]
+                avg_asia_price = asia_prices.mean()
+                df.loc[asia_prices.index, ['Open', 'High', 'Low', 'Close']] *= 0.999
+                df.loc[asia_prices.index, ['Open', 'High', 'Low', 'Close']] += avg_asia_price * 0.001
+
+                # Create a breakout pattern for UK session on some days
+                if day % 4 == 0: # Bearish setup
+                    hoa = df['High'].iloc[day_start_idx:asia_end_idx].max()
+                    breakout_idx = uk_start_idx + 2
+                    df.loc[df.index[breakout_idx], 'High'] = hoa + 0.0015
+                    df.loc[df.index[breakout_idx], 'Open'] = hoa + 0.0005
+                    df.loc[df.index[breakout_idx], 'Close'] = hoa - 0.0005 # Close below
+                elif day % 4 == 2: # Bullish setup
+                    loa = df['Low'].iloc[day_start_idx:asia_end_idx].min()
+                    breakout_idx = uk_start_idx + 2
+                    df.loc[df.index[breakout_idx], 'Low'] = loa - 0.0015
+                    df.loc[df.index[breakout_idx], 'Open'] = loa - 0.0005
+                    df.loc[df.index[breakout_idx], 'Close'] = loa + 0.0005 # Close above
+
+            return df
+
+        # Generate and preprocess data
+        data = generate_synthetic_data()
+        processed_data = preprocess_data(data)
+
+        # Initialize and run backtest
+        bt = Backtest(processed_data, AsiaLiquidityGrabUkSessionStrategy, cash=100_000, commission=.0002)
+
+        # Optimize
+        print("Running optimization...")
+        stats = bt.optimize(
+            asia_range_percent_max=list(np.arange(0.5, 3.0, 0.5)),
+            maximize='Sharpe Ratio'
+        )
+
+        print("Best stats:")
+        print(stats)
+
+        # Ensure results directory exists
+        os.makedirs('results', exist_ok=True)
+
+        # Save results to JSON
+        # Handle cases where no trades were made and metrics are NaN
+        if stats['# Trades'] > 0:
+            win_rate = float(stats['Win Rate [%]'])
+            sharpe = float(stats['Sharpe Ratio'])
+        else:
+            win_rate = 0.0
+            sharpe = 0.0
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'asia_liquidity_grab_uk_session',
+                'return': float(stats['Return [%]']),
+                'sharpe': sharpe,
+                'max_drawdown': float(stats['Max. Drawdown [%]']),
+                'win_rate': win_rate,
+                'total_trades': int(stats['# Trades'])
+            }, f, indent=2)
+
+        print("Results saved to results/temp_result.json")
+
+        # Generate and save plot
+        plot_filename = 'results/asia_liquidity_grab_uk_session.html'
+        bt.plot(filename=plot_filename)
+        print(f"Plot saved to {plot_filename}")

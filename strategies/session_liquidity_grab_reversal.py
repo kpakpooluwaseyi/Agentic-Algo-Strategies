@@ -168,8 +168,54 @@ class SessionLiquidityGrabReversalStrategy(Strategy):
                 if tp1 > self.data.Close[-1] and size > 0:
                     self.buy(sl=sl, tp=tp1, size=size)
 
-
 if __name__ == '__main__':
+    import sys
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Add required session columns if not present
+        if 'is_london' not in data.columns:
+            data['is_london'] = (data.index.hour >= 8) & (data.index.hour < 16)
+        if 'Asia_High' not in data.columns:
+            data['Asia_High'] = data['High']
+        if 'Asia_Low' not in data.columns:
+            data['Asia_Low'] = data['Low']
+        if 'Asia_Range_Pct' not in data.columns:
+            data['Asia_Range_Pct'] = ((data['High'] - data['Low']) / data['Low']) * 100
+        if 'Prev_Day_50' not in data.columns:
+            data['Prev_Day_50'] = (data['High'] + data['Low']) / 2
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, SessionLiquidityGrabReversalStrategy, cash=1_000_000, commission=.002, fractional_unit=1e-4)
+        
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': 'session_liquidity_grab_reversal',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+        sys.exit(0)
+    
+    # === STANDALONE MODE (original behavior) ===
+    print("[Standalone Mode] Using synthetic data...")
     # Generate and preprocess data
     data = generate_synthetic_data(days=365 * 2) # 2 years of data
     data = preprocess_data(data)

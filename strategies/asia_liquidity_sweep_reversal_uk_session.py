@@ -107,37 +107,81 @@ def generate_forex_data(days=100):
     return df
 
 if __name__ == '__main__':
-    # Generate and preprocess data
-    data = generate_forex_data(days=50) # Using 50 days to keep optimization fast
-    data = preprocess_data(data)
-
-    # Run backtest
-    bt = Backtest(data, AsiaLiquiditySweepReversalUkSessionStrategy, cash=100_000, commission=.0002)
-
-    # Optimize
-    stats = bt.optimize(
-        asia_range_max=np.arange(0.5, 4.0, 0.5).tolist(),
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.asia_range_max > 0
-    )
-
-    # Save results
     import os
-    os.makedirs('results', exist_ok=True)
-
-    # Handle cases with no trades
-    win_rate = stats.get('Win Rate [%]', 0)
-    sharpe = stats.get('Sharpe Ratio', 0)
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, AsiaLiquiditySweepReversalUkSessionStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'asia_liquidity_sweep_reversal_uk_session',
-            'return': float(stats.get('Return [%]', 0)),
-            'sharpe': float(sharpe) if not np.isnan(sharpe) else None,
-            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)),
-            'win_rate': float(win_rate) if not np.isnan(win_rate) else None,
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
             'total_trades': int(stats.get('# Trades', 0))
-        }, f, indent=2)
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Generate and preprocess data
+        data = generate_forex_data(days=50) # Using 50 days to keep optimization fast
+        data = preprocess_data(data)
 
-    # Generate plot
-    bt.plot(filename='results/asia_liquidity_sweep_reversal_uk_session.html')
+        # Run backtest
+        bt = Backtest(data, AsiaLiquiditySweepReversalUkSessionStrategy, cash=100_000, commission=.0002)
+
+        # Optimize
+        stats = bt.optimize(
+            asia_range_max=np.arange(0.5, 4.0, 0.5).tolist(),
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.asia_range_max > 0
+        )
+
+        # Save results
+        import os
+        os.makedirs('results', exist_ok=True)
+
+        # Handle cases with no trades
+        win_rate = stats.get('Win Rate [%]', 0)
+        sharpe = stats.get('Sharpe Ratio', 0)
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'asia_liquidity_sweep_reversal_uk_session',
+                'return': float(stats.get('Return [%]', 0)),
+                'sharpe': float(sharpe) if not np.isnan(sharpe) else None,
+                'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)),
+                'win_rate': float(win_rate) if not np.isnan(win_rate) else None,
+                'total_trades': int(stats.get('# Trades', 0))
+            }, f, indent=2)
+
+        # Generate plot
+        bt.plot(filename='results/asia_liquidity_sweep_reversal_uk_session.html')

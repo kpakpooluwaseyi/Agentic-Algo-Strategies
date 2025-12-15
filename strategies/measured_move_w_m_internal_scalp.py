@@ -136,25 +136,69 @@ class MeasuredMoveWMInternalScalpStrategy(Strategy):
                     self.in_aoi = False
 
 if __name__ == '__main__':
-    data_1m = generate_synthetic_data()
-    processed_data = preprocess_data(data_1m, prominence_param=1)
-
-    bt = Backtest(processed_data, MeasuredMoveWMInternalScalpStrategy,
-                  cash=10000, commission=.002, finalize_trades=True)
-
-    stats = bt.optimize(prominence_param=[1, 3, 5, 7, 9])
-
-    print(stats)
-
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, MeasuredMoveWMInternalScalpStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'measured_move_w_m_internal_scalp',
-            'return': float(stats.get('Return [%]', 0.0)),
-            'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
-            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
-            'win_rate': float(stats.get('Win Rate [%]', 0.0)),
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
             'total_trades': int(stats.get('# Trades', 0))
-        }, f, indent=2)
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data_1m = generate_synthetic_data()
+        processed_data = preprocess_data(data_1m, prominence_param=1)
 
-    bt.plot()
+        bt = Backtest(processed_data, MeasuredMoveWMInternalScalpStrategy,
+                      cash=10000, commission=.002, finalize_trades=True)
+
+        stats = bt.optimize(prominence_param=[1, 3, 5, 7, 9])
+
+        print(stats)
+
+        os.makedirs('results', exist_ok=True)
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'measured_move_w_m_internal_scalp',
+                'return': float(stats.get('Return [%]', 0.0)),
+                'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
+                'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
+                'win_rate': float(stats.get('Win Rate [%]', 0.0)),
+                'total_trades': int(stats.get('# Trades', 0))
+            }, f, indent=2)
+
+        bt.plot()

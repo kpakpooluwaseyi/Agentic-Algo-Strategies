@@ -44,9 +44,10 @@ class FiftyPercentRetracementScalpMwFormationStrategy(Strategy):
         self.setup_low = None
         self.just_closed_short_tp = False
         self.closed_trades_count = 0
-        self.swing_highs = self.data.df['swing_high']
-        self.swing_lows = self.data.df['swing_low']
-        self.ema = self.data.df['EMA']
+        df = self.data.df
+        self.swing_highs = df.get('swing_high', df['High'])
+        self.swing_lows = df.get('swing_low', df['Low'])
+        self.ema = df.get('EMA', df['Close'].ewm(span=50).mean())
 
     def next(self):
         # --- Bag Flip Logic ---
@@ -89,30 +90,68 @@ class FiftyPercentRetracementScalpMwFormationStrategy(Strategy):
                     self.setup_high, self.setup_low = None, None # Reset to avoid re-entry
 
 if __name__ == '__main__':
-    data = GOOG.copy()
-    data_processed = preprocess_real_data(data, ema_period=50)
-
-    bt = Backtest(data_processed, FiftyPercentRetracementScalpMwFormationStrategy, cash=100_000, commission=.002)
-    stats = bt.run()
-
-    os.makedirs('results', exist_ok=True)
-
-    stats_dict = {
-        'strategy_name': '50_percent_retracement_scalp_mw_formation',
-        'return': stats.get('Return [%]'), 'sharpe': stats.get('Sharpe Ratio'),
-        'max_drawdown': stats.get('Max. Drawdown [%]'), 'win_rate': stats.get('Win Rate [%]'),
-        'total_trades': stats.get('# Trades')
-    }
-
-    for key, value in stats_dict.items():
-        if isinstance(value, (np.integer, np.int64)): stats_dict[key] = int(value)
-        elif isinstance(value, (np.floating, np.float64)): stats_dict[key] = float(value) if not np.isnan(value) else None
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(stats_dict, f, indent=2)
-
-    if stats_dict.get('total_trades', 0) > 0:
-        bt.plot(filename="results/50_percent_retracement_scalp_mw_formation.html", open_browser=False)
-        print("Strategy executed trades and generated results/plot.")
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, FiftyPercentRetracementScalpMwFormationStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': '50_percent_retracement_scalp_mw_formation',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
     else:
-        print("No trades were executed.")
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = GOOG.copy()
+        data_processed = preprocess_real_data(data, ema_period=50)
+
+        bt = Backtest(data_processed, FiftyPercentRetracementScalpMwFormationStrategy, cash=100_000, commission=.002)
+        stats = bt.run()
+
+        os.makedirs('results', exist_ok=True)
+
+        stats_dict = {
+            'strategy_name': '50_percent_retracement_scalp_mw_formation',
+            'return': stats.get('Return [%]'), 'sharpe': stats.get('Sharpe Ratio'),
+            'max_drawdown': stats.get('Max. Drawdown [%]'), 'win_rate': stats.get('Win Rate [%]'),
+            'total_trades': stats.get('# Trades')
+        }
+
+        for key, value in stats_dict.items():
+            if isinstance(value, (np.integer, np.int64)): stats_dict[key] = int(value)
+            elif isinstance(value, (np.floating, np.float64)): stats_dict[key] = float(value) if not np.isnan(value) else None
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(stats_dict, f, indent=2)
+
+        if stats_dict.get('total_trades', 0) > 0:
+            bt.plot(filename="results/50_percent_retracement_scalp_mw_formation.html", open_browser=False)
+            print("Strategy executed trades and generated results/plot.")
+        else:
+            print("No trades were executed.")

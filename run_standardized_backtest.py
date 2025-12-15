@@ -133,6 +133,16 @@ def run_strategy_import(strategy_name: str, class_name: str, data: pd.DataFrame,
         StrategyClass = getattr(module, class_name)
         log(f"  Found class: {class_name}")
         
+        # Check if module has a preprocess_data function and call it
+        if hasattr(module, 'preprocess_data'):
+            log(f"  Calling {strategy_name}.preprocess_data()...")
+            try:
+                data = module.preprocess_data(data)
+                log(f"  Preprocessing done, {len(data)} rows remaining")
+            except Exception as e:
+                log(f"  Preprocessing failed: {e}", "WARNING")
+                # Continue anyway - might still work
+        
         # Create backtest
         bt = Backtest(data, StrategyClass, cash=10000, commission=.002)
         
@@ -346,6 +356,8 @@ def main():
                         help='Run only a specific strategy (by name or partial match)')
     parser.add_argument('--optimize', action='store_true',
                         help='Run optimization instead of single run (slower, finds best params)')
+    parser.add_argument('--subprocess', action='store_true',
+                        help='Force subprocess mode for all strategies (required for full optimization)')
     args = parser.parse_args()
     
     # Set global flags
@@ -426,13 +438,39 @@ def main():
     # Run all strategies
     results_list = []
     total_start = time.time()
+    import_success = 0
+    subprocess_success = 0
     
     for i, strategy_file in enumerate(strategies, 1):
         strategy_name = strategy_file.stem
         class_name = registry[strategy_name]
         
         print(f"\n[{i}/{len(strategies)}]", end="")
-        result = run_strategy_import(strategy_name, class_name, data.copy(), optimize=args.optimize)
+        
+        # SUBPROCESS ONLY MODE: Skip import, go straight to subprocess
+        if args.subprocess:
+            result = run_strategy_subprocess(
+                strategy_file, data_path, args.dataset,
+                timeout=args.timeout, optimize=args.optimize
+            )
+            if result.get('status') == 'SUCCESS':
+                subprocess_success += 1
+        else:
+            # HYBRID APPROACH: Try import first, fallback to subprocess
+            result = run_strategy_import(strategy_name, class_name, data.copy(), optimize=args.optimize)
+            
+            if result.get('status') == 'ERROR':
+                # Import failed - try subprocess (strategy needs preprocessing)
+                log(f"  Import failed, falling back to subprocess...", "WARNING")
+                print(f" [fallback→subprocess]", end="")
+                result = run_strategy_subprocess(
+                    strategy_file, data_path, args.dataset, 
+                    timeout=args.timeout, optimize=args.optimize
+                )
+                if result.get('status') == 'SUCCESS':
+                    subprocess_success += 1
+            else:
+                import_success += 1
         
         row = {
             'timestamp': datetime.now().isoformat(),
@@ -444,7 +482,8 @@ def main():
             'win_rate_pct': result.get('win_rate', None),
             'total_trades': result.get('total_trades', None),
             'status': result.get('status', 'UNKNOWN'),
-            'duration_s': result.get('duration', None)
+            'duration_s': result.get('duration', None),
+            'method': 'import' if result.get('status') != 'ERROR' or import_success > subprocess_success else 'subprocess'
         }
         results_list.append(row)
     

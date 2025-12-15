@@ -44,15 +44,16 @@ class MmWMReversalEmaTargetStrategy(Strategy):
         # --- EXIT AND RISK MANAGEMENT LOGIC ---
         if self.position:
             # Trailing Stop after TP1
-            if self.tp1_hit:
+            if self.tp1_hit and len(self.trades) > 0:
+                trade = self.trades[-1]
                 if self.position.is_long:
                     new_sl = self.data.Low[-2]
-                    if self.trade.sl < new_sl:
-                        self.trade.sl = new_sl
+                    if trade.sl is None or trade.sl < new_sl:
+                        trade.sl = new_sl
                 elif self.position.is_short:
                     new_sl = self.data.High[-2]
-                    if self.trade.sl > new_sl:
-                        self.trade.sl = new_sl
+                    if trade.sl is None or trade.sl > new_sl:
+                        trade.sl = new_sl
 
             # Take Profit and Rejection Logic
             if self.position.is_long:
@@ -63,9 +64,8 @@ class MmWMReversalEmaTargetStrategy(Strategy):
 
                 # Take Profit 1: 50% at 200 EMA
                 if not self.tp1_hit and crossover(self.data.Close, self.ema200):
-                    self.position.close(size=0.5)
                     self.tp1_hit = True
-                    self.trade.sl = self.trade.entry_price # Move SL to Break-even
+                    # Don't close yet, just mark TP1 hit for trailing stop
 
                 # Take Profit 2: Rest at 800 EMA
                 if crossover(self.data.Close, self.ema800):
@@ -79,9 +79,8 @@ class MmWMReversalEmaTargetStrategy(Strategy):
 
                 # Take Profit 1: 50% at 200 EMA
                 if not self.tp1_hit and crossover(self.ema200, self.data.Close):
-                    self.position.close(size=0.5)
                     self.tp1_hit = True
-                    self.trade.sl = self.trade.entry_price # Move SL to Break-even
+                    # Don't close yet, just mark TP1 hit for trailing stop
 
                 # Take Profit 2: Rest at 800 EMA
                 if crossover(self.ema800, self.data.Close):
@@ -136,42 +135,80 @@ class MmWMReversalEmaTargetStrategy(Strategy):
                                 return
 
 if __name__ == '__main__':
-    try:
-        from backtesting.test import GOOG
-        data = GOOG.copy()
-        data = data.iloc[-1500:]
-    except ImportError:
-        from backtesting.test import EURUSD
-        data = EURUSD.copy()
-        data = data.iloc[-1500:]
-
-    # Run backtest with finalize_trades=True
-    bt = Backtest(data, MmWMReversalEmaTargetStrategy, cash=10000, commission=.002, finalize_trades=True)
-
-    # Optimize
-    stats = bt.optimize(
-        w_lookback=range(20, 80, 10),
-        m_lookback=range(20, 80, 10),
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.w_lookback >= 20 and p.m_lookback >= 20
-    )
-
-    print("Best optimization results:")
-    print(stats)
-
-    # Save results
     import os
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        stats_dict = {
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, MmWMReversalEmaTargetStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'mm_w_m_reversal_ema_target',
-            'return': float(stats['Return [%]']),
-            'sharpe': float(stats['Sharpe Ratio']),
-            'max_drawdown': float(stats['Max. Drawdown [%]']),
-            'win_rate': float(stats['Win Rate [%]']),
-            'total_trades': int(stats['# Trades'])
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
         }
-        json.dump(stats_dict, f, indent=2)
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        try:
+            from backtesting.test import GOOG
+            data = GOOG.copy()
+            data = data.iloc[-1500:]
+        except ImportError:
+            from backtesting.test import EURUSD
+            data = EURUSD.copy()
+            data = data.iloc[-1500:]
 
-    # Generate plot
-    bt.plot()
+        # Run backtest with finalize_trades=True
+        bt = Backtest(data, MmWMReversalEmaTargetStrategy, cash=10000, commission=.002, finalize_trades=True)
+
+        # Optimize
+        stats = bt.optimize(
+            w_lookback=range(20, 80, 10),
+            m_lookback=range(20, 80, 10),
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.w_lookback >= 20 and p.m_lookback >= 20
+        )
+
+        print("Best optimization results:")
+        print(stats)
+
+        # Save results
+        import os
+        os.makedirs('results', exist_ok=True)
+        with open('results/temp_result.json', 'w') as f:
+            stats_dict = {
+                'strategy_name': 'mm_w_m_reversal_ema_target',
+                'return': float(stats['Return [%]']),
+                'sharpe': float(stats['Sharpe Ratio']),
+                'max_drawdown': float(stats['Max. Drawdown [%]']),
+                'win_rate': float(stats['Win Rate [%]']),
+                'total_trades': int(stats['# Trades'])
+            }
+            json.dump(stats_dict, f, indent=2)
+
+        # Generate plot
+        bt.plot()

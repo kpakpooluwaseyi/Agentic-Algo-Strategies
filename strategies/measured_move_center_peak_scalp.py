@@ -202,50 +202,88 @@ class MeasuredMoveCenterPeakScalpStrategy(Strategy):
 # --- Backtesting and Optimization ---
 
 if __name__ == '__main__':
-
-    # Generate data
-    data = generate_synthetic_data()
-
-    # Initialize Backtest
-    bt = Backtest(data, MeasuredMoveCenterPeakScalpStrategy, cash=100_000, commission=.002)
-
-    # Run optimization
-    stats = bt.optimize(
-        major_peak_lookback=range(180, 301, 30),
-        minor_peak_lookback=range(10, 21, 5),
-        risk_reward_ratio=[3, 4, 5],
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.major_peak_lookback > p.minor_peak_lookback * 5
-    )
-
-    print("Best stats:", stats)
-
-    # --- Output Results ---
-    os.makedirs('results', exist_ok=True)
-
-    # Get the best stats series, handling the case of no trades
-    final_stats = stats
-
-    # Safely get metrics, providing a default value of 0 if the key is missing or NaN
-    return_pct = final_stats.get('Return [%]', 0.0)
-    sharpe = final_stats.get('Sharpe Ratio', 0.0)
-    max_drawdown = final_stats.get('Max. Drawdown [%]', 0.0)
-    win_rate = final_stats.get('Win Rate [%]', 0.0)
-    total_trades = final_stats.get('# Trades', 0)
-
-    # Save results to JSON
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, MeasuredMoveCenterPeakScalpStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'measured_move_center_peak_scalp',
-            'return': float(return_pct),
-            'sharpe': float(sharpe) if not np.isnan(sharpe) else 0.0,
-            'max_drawdown': float(max_drawdown),
-            'win_rate': float(win_rate),
-            'total_trades': int(total_trades)
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
 
-    print("Results saved to results/temp_result.json")
+        # Generate data
+        data = generate_synthetic_data()
 
-    # Generate and save the plot of the best run
-    bt.plot(filename="results/measured_move_center_peak_scalp", open_browser=False)
-    print("Plot saved to results/measured_move_center_peak_scalp.html")
+        # Initialize Backtest
+        bt = Backtest(data, MeasuredMoveCenterPeakScalpStrategy, cash=100_000, commission=.002)
+
+        # Run optimization
+        stats = bt.optimize(
+            major_peak_lookback=range(180, 301, 30),
+            minor_peak_lookback=range(10, 21, 5),
+            risk_reward_ratio=[3, 4, 5],
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.major_peak_lookback > p.minor_peak_lookback * 5
+        )
+
+        print("Best stats:", stats)
+
+        # --- Output Results ---
+        os.makedirs('results', exist_ok=True)
+
+        # Get the best stats series, handling the case of no trades
+        final_stats = stats
+
+        # Safely get metrics, providing a default value of 0 if the key is missing or NaN
+        return_pct = final_stats.get('Return [%]', 0.0)
+        sharpe = final_stats.get('Sharpe Ratio', 0.0)
+        max_drawdown = final_stats.get('Max. Drawdown [%]', 0.0)
+        win_rate = final_stats.get('Win Rate [%]', 0.0)
+        total_trades = final_stats.get('# Trades', 0)
+
+        # Save results to JSON
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'measured_move_center_peak_scalp',
+                'return': float(return_pct),
+                'sharpe': float(sharpe) if not np.isnan(sharpe) else 0.0,
+                'max_drawdown': float(max_drawdown),
+                'win_rate': float(win_rate),
+                'total_trades': int(total_trades)
+            }, f, indent=2)
+
+        print("Results saved to results/temp_result.json")
+
+        # Generate and save the plot of the best run
+        bt.plot(filename="results/measured_move_center_peak_scalp", open_browser=False)
+        print("Plot saved to results/measured_move_center_peak_scalp.html")

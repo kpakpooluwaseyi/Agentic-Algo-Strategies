@@ -135,8 +135,9 @@ class SmcRsiDivergenceScalperStrategy(Strategy):
         self.trade_direction = 0
 
     def next(self):
-        pip_size = 0.0001
-        sl_buffer = self.sl_buffer_pips * pip_size
+        # Use percentage-based buffer instead of pips (works with any price scale)
+        current_price = self.data.Close[-1] if len(self.data.Close) > 0 else 1
+        sl_buffer = abs(current_price) * 0.001 * self.sl_buffer_pips  # 0.1% per pip
 
         # If there are open trades, manage them or look for scaling opportunities
         if len(self.trades) > 0:
@@ -307,65 +308,103 @@ class SmcRsiDivergenceScalperStrategy(Strategy):
 
 
 if __name__ == '__main__':
-    # Load or generate data
-    data = generate_synthetic_data(n_points=500)
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, SmcRsiDivergenceScalperStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': 'smc_rsi_divergence_scalper',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Load or generate data
+        data = generate_synthetic_data(n_points=500)
 
-    # Ensure results directory exists
-    if not os.path.exists('results'):
-        os.makedirs('results')
+        # Ensure results directory exists
+        if not os.path.exists('results'):
+            os.makedirs('results')
 
-    # Run backtest
-    bt = Backtest(data, SmcRsiDivergenceScalperStrategy, cash=10000, commission=.002)
+        # Run backtest
+        bt = Backtest(data, SmcRsiDivergenceScalperStrategy, cash=10000, commission=.002)
 
-    # Optimize
-    stats = bt.optimize(
-        rsi_period=range(10, 20, 2),
-        swing_order=range(5, 25, 5),
-        rr_ratio_tp1=np.arange(1.5, 3.0, 0.5),
-        sl_buffer_pips=range(3, 10, 2),
-        maximize='Sharpe Ratio',
-        constraint=lambda param: param.swing_order > 2 # Basic constraint example
-    )
+        # Optimize
+        stats = bt.optimize(
+            rsi_period=range(10, 20, 2),
+            swing_order=range(5, 25, 5),
+            rr_ratio_tp1=np.arange(1.5, 3.0, 0.5),
+            sl_buffer_pips=range(3, 10, 2),
+            maximize='Sharpe Ratio',
+            constraint=lambda param: param.swing_order > 2 # Basic constraint example
+        )
 
-    # Sanitize stats for JSON serialization
-    def sanitize_stats(stats):
-        sanitized = {}
-        for key, value in stats.items():
-            if isinstance(value, (np.integer, np.int64)):
-                sanitized[key] = int(value)
-            elif isinstance(value, (np.floating, np.float64)):
-                sanitized[key] = float(value)
-            elif isinstance(value, (pd.Series, pd.DataFrame)):
-                # Decide how to handle pandas objects, e.g., convert to dict or ignore
-                sanitized[key] = None # Or some other representation
-            elif pd.isna(value):
-                sanitized[key] = None
-            else:
-                sanitized[key] = value
-        return sanitized
+        # Sanitize stats for JSON serialization
+        def sanitize_stats(stats):
+            sanitized = {}
+            for key, value in stats.items():
+                if isinstance(value, (np.integer, np.int64)):
+                    sanitized[key] = int(value)
+                elif isinstance(value, (np.floating, np.float64)):
+                    sanitized[key] = float(value)
+                elif isinstance(value, (pd.Series, pd.DataFrame)):
+                    # Decide how to handle pandas objects, e.g., convert to dict or ignore
+                    sanitized[key] = None # Or some other representation
+                elif pd.isna(value):
+                    sanitized[key] = None
+                else:
+                    sanitized[key] = value
+            return sanitized
 
-    # Clean up stats dictionary
-    # The stats object from optimize is a Series, let's access the values we need
-    final_stats = {
-        'strategy_name': 'smc_rsi_divergence_scalper',
-        'return': stats.get('Return [%]', 0.0),
-        'sharpe': stats.get('Sharpe Ratio', 0.0),
-        'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
-        'win_rate': stats.get('Win Rate [%]', 0.0),
-        'total_trades': stats.get('# Trades', 0)
-    }
+        # Clean up stats dictionary
+        # The stats object from optimize is a Series, let's access the values we need
+        final_stats = {
+            'strategy_name': 'smc_rsi_divergence_scalper',
+            'return': stats.get('Return [%]', 0.0),
+            'sharpe': stats.get('Sharpe Ratio', 0.0),
+            'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
+            'win_rate': stats.get('Win Rate [%]', 0.0),
+            'total_trades': stats.get('# Trades', 0)
+        }
 
-    sanitized_final_stats = sanitize_stats(final_stats)
+        sanitized_final_stats = sanitize_stats(final_stats)
 
-    # Save results
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(sanitized_final_stats, f, indent=2)
+        # Save results
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(sanitized_final_stats, f, indent=2)
 
-    print("Backtest complete. Results saved to results/temp_result.json")
+        print("Backtest complete. Results saved to results/temp_result.json")
 
-    # Generate plot
-    try:
-        bt.plot(filename='results/smc_rsi_divergence_scalper_plot.html')
-        print("Plot saved to results/smc_rsi_divergence_scalper_plot.html")
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        # Generate plot
+        try:
+            bt.plot(filename='results/smc_rsi_divergence_scalper_plot.html')
+            print("Plot saved to results/smc_rsi_divergence_scalper_plot.html")
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

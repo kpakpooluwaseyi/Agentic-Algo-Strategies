@@ -204,62 +204,100 @@ class EmaStructureRetest15MStrategy(Strategy):
                     self.short_setup_state = None
 
 if __name__ == '__main__':
-    # Load or generate data
-    from backtesting.test import GOOG
-    # The strategy is designed for 15-minute data, GOOG is daily.
-    # We will proceed with GOOG for demonstration purposes as required.
-    data = GOOG.copy()
-
-    # It's a good practice to resample daily data to a proxy for intraday,
-    # though it won't replicate true intraday price action.
-    # This step is illustrative. For a real test, 15-min data is needed.
-    # data = data.resample('4H').last().ffill() # Example resampling
-
-    # Run backtest
-    bt = Backtest(data, EmaStructureRetest15MStrategy, cash=10000, commission=.002)
-
-    # Optimize
-    stats = bt.optimize(
-        swing_lookback=range(5, 30, 5),
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.swing_lookback > 0
-    )
-
-    # Save results
     import os
-    os.makedirs('results', exist_ok=True)
-
-    # A robust way to sanitize stats for JSON serialization
-    def sanitize_stats(stats):
-        # This handles cases where metrics might be missing (e.g., no trades executed)
-        # or have non-serializable types like NaN or numpy floats.
-        sanitized = {
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, EmaStructureRetest15MStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'ema_structure_retest_15m',
-            'return': stats.get('Return [%]', 0.0),
-            'sharpe': stats.get('Sharpe Ratio', 0.0),
-            'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
-            'win_rate': stats.get('Win Rate [%]', 0.0),
-            'total_trades': stats.get('# Trades', 0)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
         }
-        for key, value in sanitized.items():
-            if isinstance(value, (np.floating, np.integer)):
-                sanitized[key] = float(value) if np.isfinite(value) else None
-            elif isinstance(value, int):
-                 sanitized[key] = int(value)
-            elif pd.isna(value):
-                sanitized[key] = None
-        return sanitized
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Load or generate data
+        from backtesting.test import GOOG
+        # The strategy is designed for 15-minute data, GOOG is daily.
+        # We will proceed with GOOG for demonstration purposes as required.
+        data = GOOG.copy()
 
-    final_stats = sanitize_stats(stats)
+        # It's a good practice to resample daily data to a proxy for intraday,
+        # though it won't replicate true intraday price action.
+        # This step is illustrative. For a real test, 15-min data is needed.
+        # data = data.resample('4H').last().ffill() # Example resampling
 
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(final_stats, f, indent=2)
+        # Run backtest
+        bt = Backtest(data, EmaStructureRetest15MStrategy, cash=10000, commission=.002)
 
-    print("Backtest results saved to results/temp_result.json")
+        # Optimize
+        stats = bt.optimize(
+            swing_lookback=range(5, 30, 5),
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.swing_lookback > 0
+        )
 
-    # Generate plot
-    try:
-        bt.plot(filename='results/ema_structure_retest_15m_plot.html')
-        print("Backtest plot saved to results/ema_structure_retest_15m_plot.html")
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        # Save results
+        import os
+        os.makedirs('results', exist_ok=True)
+
+        # A robust way to sanitize stats for JSON serialization
+        def sanitize_stats(stats):
+            # This handles cases where metrics might be missing (e.g., no trades executed)
+            # or have non-serializable types like NaN or numpy floats.
+            sanitized = {
+                'strategy_name': 'ema_structure_retest_15m',
+                'return': stats.get('Return [%]', 0.0),
+                'sharpe': stats.get('Sharpe Ratio', 0.0),
+                'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
+                'win_rate': stats.get('Win Rate [%]', 0.0),
+                'total_trades': stats.get('# Trades', 0)
+            }
+            for key, value in sanitized.items():
+                if isinstance(value, (np.floating, np.integer)):
+                    sanitized[key] = float(value) if np.isfinite(value) else None
+                elif isinstance(value, int):
+                     sanitized[key] = int(value)
+                elif pd.isna(value):
+                    sanitized[key] = None
+            return sanitized
+
+        final_stats = sanitize_stats(stats)
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(final_stats, f, indent=2)
+
+        print("Backtest results saved to results/temp_result.json")
+
+        # Generate plot
+        try:
+            bt.plot(filename='results/ema_structure_retest_15m_plot.html')
+            print("Backtest plot saved to results/ema_structure_retest_15m_plot.html")
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

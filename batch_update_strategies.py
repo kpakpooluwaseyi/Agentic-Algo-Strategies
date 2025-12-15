@@ -1,252 +1,194 @@
 #!/usr/bin/env python3
 """
-Batch update strategies to support dual-mode execution.
-Uses AST to properly parse and modify Python files.
+Batch updates all strategy files to add dual-mode support.
+This allows strategies to use either:
+1. External data via BACKTEST_DATA_PATH environment variable
+2. Original synthetic data generation (standalone mode)
 """
 
-import os
 import re
-import ast
 from pathlib import Path
 
-STRATEGIES_DIR = Path('strategies')
+STRATEGIES_DIR = Path(__file__).parent / 'strategies'
 
-def get_strategy_class_name(filepath: Path) -> str:
-    """Find the main Strategy class name using AST"""
-    content = filepath.read_text()
-    try:
-        tree = ast.parse(content)
-        for node in ast.walk(tree):
-            if isinstance(node, ast.ClassDef):
-                for base in node.bases:
-                    if isinstance(base, ast.Name) and base.id == 'Strategy':
-                        return node.name
-    except:
-        pass
+# Strategies that already have dual-mode support
+ALREADY_UPDATED = {
+    '50_50_mow_internal_scalp',
+    'asia_liquidity_reversal_uk_session', 
+    'asia_range_liquidity_sweep_uk_reversal',
+    'ict_asian_sweep_london_open',
+    'predictable_candle_expansion_displacement_model',
+    'session_liquidity_grab_reversal'
+}
+
+def find_strategy_class(content: str) -> str:
+    """Extract the Strategy class name from the file."""
+    match = re.search(r'class\s+(\w+)\s*\(\s*Strategy\s*\)', content)
+    return match.group(1) if match else None
+
+def find_main_block(content: str):
+    """Find the __main__ block start line."""
+    match = re.search(r"if __name__\s*==\s*['\"]__main__['\"]\s*:", content)
+    if match:
+        return match.start()
     return None
 
-
-def get_main_block_range(content: str) -> tuple:
-    """Find the line range of __main__ block"""
-    lines = content.split('\n')
-    start_line = None
+def update_strategy(filepath: Path, dry_run: bool = True) -> bool:
+    """Update a strategy file with dual-mode support."""
+    content = filepath.read_text()
     
-    for i, line in enumerate(lines):
-        if "__name__" in line and "__main__" in line:
-            start_line = i
-            break
+    # Skip if already has dual-mode
+    if 'BACKTEST_DATA_PATH' in content:
+        print(f"  ⏭️  {filepath.stem}: Already has dual-mode support")
+        return False
     
-    if start_line is None:
-        return None, None
+    # Find strategy class name
+    strategy_class = find_strategy_class(content)
+    if not strategy_class:
+        print(f"  ❌ {filepath.stem}: Could not find Strategy class")
+        return False
     
-    # __main__ goes to end of file
-    return start_line, len(lines)
-
-
-def get_optimize_params(content: str) -> str:
-    """Extract optimization parameters from bt.optimize() call"""
-    # Find the bt.optimize call and extract everything between parentheses
-    # Handle multiline by finding matching parens
-    match = re.search(r'bt\.optimize\s*\(', content)
-    if not match:
-        return None
+    # Find __main__ block
+    main_start = find_main_block(content)
+    if main_start is None:
+        print(f"  ❌ {filepath.stem}: No __main__ block found")
+        return False
     
-    start = match.end()
-    paren_depth = 1
-    end = start
+    # Get the existing main block content
+    main_content = content[main_start:]
     
-    while end < len(content) and paren_depth > 0:
-        if content[end] == '(':
-            paren_depth += 1
-        elif content[end] == ')':
-            paren_depth -= 1
-        end += 1
+    # Check if there's a generate_synthetic_data function
+    has_synthetic = 'generate_synthetic_data' in content or 'def generate_' in content
     
-    params = content[start:end-1].strip()
-    return params
-
-
-def get_data_generation_call(content: str) -> str:
-    """Find how data is loaded (generate_synthetic_data or similar)"""
-    # Look for data = ... patterns
-    patterns = [
-        (r'data\s*=\s*generate_synthetic_data\([^)]*\)', 'generate_synthetic_data()'),
-        (r'raw_data\s*=\s*generate_synthetic_data\([^)]*\)', 'generate_synthetic_data()'),
-        (r'data\s*=\s*GOOG\.copy\(\)', 'GOOG.copy()'),
-    ]
+    # Check if there's a preprocess_data function (module level, not in __main__)
+    has_preprocess = re.search(r'^def preprocess_data\(', content, re.MULTILINE)
     
-    for pattern, default in patterns:
-        if re.search(pattern, content):
-            match = re.search(pattern, content)
-            return match.group(0).split('=')[1].strip()
-    
-    return 'generate_synthetic_data()'
-
-
-def create_new_main_block(strategy_class: str, strategy_name: str, 
-                         optimize_params: str, data_gen_call: str,
-                         has_preprocess: bool = False) -> str:
-    """Create the new dual-mode __main__ block"""
-    
-    # Build the optimize call
-    if optimize_params:
-        optimize_call = f"stats = bt.optimize(\n            {optimize_params}\n        )"
-    else:
-        optimize_call = "stats = bt.run()"
-    
-    # Data loading for standalone mode
-    if 'preprocess' in data_gen_call.lower() or has_preprocess:
-        standalone_data = f"data = {data_gen_call}"
-    else:
-        standalone_data = f"data = {data_gen_call}"
-    
-    return f'''if __name__ == '__main__':
+    # Create the new __main__ block
+    new_main = f'''if __name__ == '__main__':
     import os
+    import json
+    from backtesting import Backtest
     
-    # === DUAL MODE SUPPORT ===
     data_path = os.environ.get('BACKTEST_DATA_PATH')
     mode = os.environ.get('BACKTEST_MODE', 'standalone')
     
     if data_path and os.path.exists(data_path):
-        # --- STANDARDIZED MODE ---
-        print(f"[Standardized Mode] Loading: {{data_path}}")
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {{data_path}}")
         data = pd.read_csv(data_path, index_col=0, parse_dates=True)
         data.columns = [c.title() for c in data.columns]
         if not isinstance(data.index, pd.DatetimeIndex):
             data.index = pd.to_datetime(data.index)
-        
-        bt = Backtest(data, {strategy_class}, cash=10000, commission=.002)
-        
-        if mode == 'optimize':
-            print("[Optimize Mode] Running optimization...")
-            {optimize_call}
-        else:
-            print("[Run Mode] Single backtest...")
-            stats = bt.run()
-    else:
-        # --- STANDALONE MODE ---
-        print("[Standalone Mode] Using built-in data...")
-        {standalone_data}
-        bt = Backtest(data, {strategy_class}, cash=10000, commission=.002)
-        {optimize_call}
-        try:
-            bt.plot(filename='results/{strategy_name}.html')
-        except Exception as e:
-            print(f"Plot error: {{e}}")
-    
-    # --- SAVE RESULTS ---
-    os.makedirs('results', exist_ok=True)
-    
-    def _sanitize(v):
-        import numpy as np
-        if isinstance(v, (np.integer, np.int64)): return int(v)
-        if isinstance(v, (np.floating, np.float64)): 
-            return None if np.isnan(v) else float(v)
-        if isinstance(v, (pd.Series, pd.DataFrame)): return None
-        if v is None or (isinstance(v, float) and np.isnan(v)): return None
-        return v
-    
-    result = {{
-        'strategy_name': '{strategy_name}',
-        'return': _sanitize(stats.get('Return [%]')),
-        'sharpe': _sanitize(stats.get('Sharpe Ratio')),
-        'max_drawdown': _sanitize(stats.get('Max. Drawdown [%]')),
-        'win_rate': _sanitize(stats.get('Win Rate [%]')),
-        'total_trades': _sanitize(stats.get('# Trades', 0))
-    }}
-    
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(result, f, indent=2)
-    print(f"Return={{result['return']}}, Trades={{result['total_trades']}}")
 '''
-
-
-def update_strategy(filepath: Path, dry_run: bool = True) -> tuple:
-    """Update a strategy file. Returns (success, message)"""
-    content = filepath.read_text()
-    strategy_name = filepath.stem
     
-    # Get strategy class
-    strategy_class = get_strategy_class_name(filepath)
-    if not strategy_class:
-        return False, f"No Strategy class found"
+    # Add preprocessing if function exists at module level
+    if has_preprocess:
+        new_main += '''        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+'''
     
-    # Get __main__ block range
-    start_line, end_line = get_main_block_range(content)
-    if start_line is None:
-        return False, f"No __main__ block found"
+    new_main += f'''        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, {strategy_class}, cash=1_000_000, commission=.002, fractional_unit=1e-4)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {{
+            'strategy_name': '{filepath.stem}',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }}
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={{result['return']}}%, Trades={{result['total_trades']}}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+'''
     
-    # Get optimize params
-    optimize_params = get_optimize_params(content)
+    # Now we need to preserve the original __main__ content as the standalone fallback
+    # Extract just the body of the original __main__ block
+    original_body_lines = main_content.split('\n')[1:]  # Skip the 'if __name__' line
     
-    # Get data generation call
-    data_gen = get_data_generation_call(content)
+    # Re-indent the original body to be inside the else block
+    # Original code has 4-space indent (inside __main__), we add 4 more for the else block = 8 total
+    indented_lines = []
+    for line in original_body_lines:
+        if line.strip():  # Non-empty lines
+            # Add 4 spaces to the BEGINNING of the line (preserving existing indent)
+            indented_lines.append('    ' + line)
+        else:
+            indented_lines.append('')
     
-    # Check for preprocess function
-    has_preprocess = 'preprocess' in content.lower()
+    new_main += '\n'.join(indented_lines)
     
-    # Create new __main__ block
-    new_main = create_new_main_block(
-        strategy_class, strategy_name, optimize_params, data_gen, has_preprocess
-    )
-    
-    # Replace content
-    lines = content.split('\n')
-    new_lines = lines[:start_line] + [new_main]
-    new_content = '\n'.join(new_lines)
+    # Replace the old __main__ block with the new one
+    new_content = content[:main_start] + new_main
     
     if dry_run:
-        print(f"  📝 {strategy_name}")
-        print(f"     Class: {strategy_class}")
-        print(f"     Optimize params: {len(optimize_params or '')} chars")
-        return True, "Would update"
+        print(f"  🔍 {filepath.stem}: Would update (class={strategy_class}, preprocess={bool(has_preprocess)})")
+        return True
     else:
         filepath.write_text(new_content)
-        return True, "Updated"
-
+        print(f"  ✅ {filepath.stem}: Updated successfully")
+        return True
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--apply', action='store_true')
-    parser.add_argument('--strategy', type=str)
+    parser = argparse.ArgumentParser(description='Batch update strategies with dual-mode support')
+    parser.add_argument('--apply', action='store_true', help='Actually apply changes (default is dry-run)')
+    parser.add_argument('--strategy', type=str, help='Update only a specific strategy')
     args = parser.parse_args()
     
-    # Skip already updated
-    skip = []  # Empty - we reverted all changes
+    dry_run = not args.apply
+    
+    if dry_run:
+        print("🔍 DRY RUN MODE - No files will be changed")
+        print("   Use --apply to actually update files\n")
+    else:
+        print("⚠️  APPLYING CHANGES - Files will be modified\n")
     
     strategies = sorted(STRATEGIES_DIR.glob('*.py'))
-    strategies = [s for s in strategies if not s.stem.startswith('__')]
     
     if args.strategy:
         strategies = [s for s in strategies if args.strategy.lower() in s.stem.lower()]
     
-    print(f"{'Applying' if args.apply else 'Dry run'}: {len(strategies)} strategies")
-    print("=" * 60)
+    updated = 0
+    skipped = 0
+    failed = 0
     
-    success_count = 0
-    fail_count = 0
-    
-    for strategy in strategies:
-        if strategy.stem in skip:
-            print(f"  ⏭️ Skip: {strategy.stem}")
+    for filepath in strategies:
+        if filepath.stem.startswith('__'):
             continue
-        
-        success, msg = update_strategy(strategy, dry_run=not args.apply)
-        if success:
-            if args.apply:
-                print(f"  ✅ {strategy.stem}")
-            success_count += 1
-        else:
-            print(f"  ❌ {strategy.stem}: {msg}")
-            fail_count += 1
+        if filepath.stem in ALREADY_UPDATED:
+            print(f"  ⏭️  {filepath.stem}: Already manually updated")
+            skipped += 1
+            continue
+            
+        try:
+            if update_strategy(filepath, dry_run=dry_run):
+                updated += 1
+            else:
+                skipped += 1
+        except Exception as e:
+            print(f"  ❌ {filepath.stem}: Error - {e}")
+            failed += 1
     
-    print("=" * 60)
-    print(f"Success: {success_count}, Failed: {fail_count}")
+    print(f"\n📊 Summary: {updated} updated, {skipped} skipped, {failed} failed")
     
-    if not args.apply:
-        print("\nRun with --apply to update files")
-
+    if dry_run and updated > 0:
+        print("\n💡 Run with --apply to actually update the files")
 
 if __name__ == '__main__':
     main()

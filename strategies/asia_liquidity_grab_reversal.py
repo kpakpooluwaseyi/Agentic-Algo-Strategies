@@ -177,51 +177,95 @@ class AsiaLiquidityGrabReversalStrategy(Strategy):
             self.liquidity_grab_down = self.data.Low[-1]
 
 if __name__ == '__main__':
-    data = generate_forex_data(days=200)
-    data = preprocess_data(data)
-
-    bt = Backtest(data, AsiaLiquidityGrabReversalStrategy, cash=10000, commission=.002)
-
-    stats = bt.optimize(
-        asia_range_max_pct=list(np.arange(0.5, 3.1, 0.5)),
-        maximize='Sharpe Ratio'
-    )
-
     import os
-    os.makedirs('results', exist_ok=True)
-
-    # Sanitize stats for JSON serialization
-    def sanitize_stats(stats):
-        sanitized = {}
-        for key, value in stats.items():
-            if isinstance(value, (pd.Series, pd.DataFrame)):
-                sanitized[key] = None # Or handle appropriately
-            elif pd.isna(value):
-                sanitized[key] = None
-            elif isinstance(value, (np.int64, np.int32)):
-                sanitized[key] = int(value)
-            elif isinstance(value, (np.float64, np.float32)):
-                sanitized[key] = float(value)
-            else:
-                sanitized[key] = value
-        return sanitized
-
-    clean_stats = sanitize_stats(stats)
-
-    with open('results/temp_result.json', 'w') as f:
-        # Use a secondary get(key, 0.0) for metrics that can be NaN
-        json.dump({
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, AsiaLiquidityGrabReversalStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'asia_liquidity_grab_reversal',
-            'return': clean_stats.get('Return [%]') or 0.0,
-            'sharpe': clean_stats.get('Sharpe Ratio') or 0.0,
-            'max_drawdown': clean_stats.get('Max. Drawdown [%]') or 0.0,
-            'win_rate': clean_stats.get('Win Rate [%]') or 0.0,
-            'total_trades': clean_stats.get('# Trades') or 0
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = generate_forex_data(days=200)
+        data = preprocess_data(data)
 
-    print("Backtest results saved to results/temp_result.json")
+        bt = Backtest(data, AsiaLiquidityGrabReversalStrategy, cash=10000, commission=.002)
 
-    try:
-        bt.plot()
-    except TypeError as e:
-        print(f"Could not generate plot due to a known issue with the library: {e}")
+        stats = bt.optimize(
+            asia_range_max_pct=list(np.arange(0.5, 3.1, 0.5)),
+            maximize='Sharpe Ratio'
+        )
+
+        import os
+        os.makedirs('results', exist_ok=True)
+
+        # Sanitize stats for JSON serialization
+        def sanitize_stats(stats):
+            sanitized = {}
+            for key, value in stats.items():
+                if isinstance(value, (pd.Series, pd.DataFrame)):
+                    sanitized[key] = None # Or handle appropriately
+                elif pd.isna(value):
+                    sanitized[key] = None
+                elif isinstance(value, (np.int64, np.int32)):
+                    sanitized[key] = int(value)
+                elif isinstance(value, (np.float64, np.float32)):
+                    sanitized[key] = float(value)
+                else:
+                    sanitized[key] = value
+            return sanitized
+
+        clean_stats = sanitize_stats(stats)
+
+        with open('results/temp_result.json', 'w') as f:
+            # Use a secondary get(key, 0.0) for metrics that can be NaN
+            json.dump({
+                'strategy_name': 'asia_liquidity_grab_reversal',
+                'return': clean_stats.get('Return [%]') or 0.0,
+                'sharpe': clean_stats.get('Sharpe Ratio') or 0.0,
+                'max_drawdown': clean_stats.get('Max. Drawdown [%]') or 0.0,
+                'win_rate': clean_stats.get('Win Rate [%]') or 0.0,
+                'total_trades': clean_stats.get('# Trades') or 0
+            }, f, indent=2)
+
+        print("Backtest results saved to results/temp_result.json")
+
+        try:
+            bt.plot()
+        except TypeError as e:
+            print(f"Could not generate plot due to a known issue with the library: {e}")

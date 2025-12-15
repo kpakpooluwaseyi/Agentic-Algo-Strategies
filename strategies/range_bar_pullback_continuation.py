@@ -64,7 +64,13 @@ class RangeBarPullbackContinuationStrategy(Strategy):
         self.pullback_high, self.pullback_low = None, None
         self.in_pullback = False
         self.trade_pending = False
-        self.is_uk_session = self.I(lambda x: x, self.data.df['is_uk_session'], name="is_uk_session")
+        df = self.data.df
+        # Create is_uk_session if not present (8-16 UTC)
+        if 'is_uk_session' in df.columns:
+            is_uk = df['is_uk_session']
+        else:
+            is_uk = pd.Series((df.index.hour >= 8) & (df.index.hour < 16), index=df.index)
+        self.is_uk_session = self.I(lambda x: x, is_uk, name="is_uk_session")
 
     def next(self):
         if self.position:
@@ -128,32 +134,70 @@ class RangeBarPullbackContinuationStrategy(Strategy):
 # Backtest Execution Block
 # ===================================================================================
 if __name__ == '__main__':
-    data = generate_synthetic_data()
-    uk_start, uk_end = pd.to_datetime("07:30").time(), pd.to_datetime("08:30").time()
-    data['is_uk_session'] = (data.index.time >= uk_start) & (data.index.time <= uk_end)
-
-    bt = Backtest(data, RangeBarPullbackContinuationStrategy, cash=100_000, commission=.002)
-    stats = bt.optimize(min_rr=np.arange(0.5, 1.5, 0.1).tolist(), maximize='Sharpe Ratio')
-
-    print("Best Run Stats:")
-    print(stats)
-    print("\nTrades from the best run:")
-    print(stats._trades)
-
-    sanitized = sanitize_stats(stats)
     import os
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, RangeBarPullbackContinuationStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'range_bar_pullback_continuation',
-            'return': sanitized.get('Return [%]'),
-            'sharpe': sanitized.get('Sharpe Ratio'),
-            'max_drawdown': sanitized.get('Max. Drawdown [%]'),
-            'win_rate': sanitized.get('Win Rate [%]'),
-            'total_trades': sanitized.get('# Trades')
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = generate_synthetic_data()
+        uk_start, uk_end = pd.to_datetime("07:30").time(), pd.to_datetime("08:30").time()
+        data['is_uk_session'] = (data.index.time >= uk_start) & (data.index.time <= uk_end)
 
-    try:
-        bt.plot(filename='results/range_bar_pullback_continuation.html', open_browser=False)
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        bt = Backtest(data, RangeBarPullbackContinuationStrategy, cash=100_000, commission=.002)
+        stats = bt.optimize(min_rr=np.arange(0.5, 1.5, 0.1).tolist(), maximize='Sharpe Ratio')
+
+        print("Best Run Stats:")
+        print(stats)
+        print("\nTrades from the best run:")
+        print(stats._trades)
+
+        sanitized = sanitize_stats(stats)
+        import os
+        os.makedirs('results', exist_ok=True)
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'range_bar_pullback_continuation',
+                'return': sanitized.get('Return [%]'),
+                'sharpe': sanitized.get('Sharpe Ratio'),
+                'max_drawdown': sanitized.get('Max. Drawdown [%]'),
+                'win_rate': sanitized.get('Win Rate [%]'),
+                'total_trades': sanitized.get('# Trades')
+            }, f, indent=2)
+
+        try:
+            bt.plot(filename='results/range_bar_pullback_continuation.html', open_browser=False)
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

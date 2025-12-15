@@ -75,12 +75,17 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df['hour'] = df.index.hour
     df['is_asia'] = (df['hour'] >= 0) & (df['hour'] < 8)
     df['is_uk'] = (df['hour'] >= 8) & (df['hour'] < 16)
-    asia_session_data = df[df['is_asia']].groupby(df.index.date).agg(
-        asia_high=('High', 'max'),
-        asia_low=('Low', 'min')
-    )
-    df['asia_high'] = pd.Series(df.index.date, index=df.index).map(asia_session_data['asia_high'])
-    df['asia_low'] = pd.Series(df.index.date, index=df.index).map(asia_session_data['asia_low'])
+    asia_df = df[df['is_asia']]
+    if len(asia_df) > 0:
+        asia_session_data = asia_df.groupby(asia_df.index.date).agg(
+            asia_high=('High', 'max'),
+            asia_low=('Low', 'min')
+        )
+        df['asia_high'] = pd.Series(df.index.date, index=df.index).map(asia_session_data['asia_high'])
+        df['asia_low'] = pd.Series(df.index.date, index=df.index).map(asia_session_data['asia_low'])
+    else:
+        df['asia_high'] = df['High']
+        df['asia_low'] = df['Low']
     df['asia_high'] = df['asia_high'].ffill()
     df['asia_low'] = df['asia_low'].ffill()
     df['asia_range_pct'] = ((df['asia_high'] - df['asia_low']) / df['asia_low']) * 100

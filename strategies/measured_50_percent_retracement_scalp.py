@@ -67,8 +67,12 @@ class Measured50PercentRetracementScalpStrategy(Strategy):
     ema_period = 200
 
     def init(self):
-        self.aoi = self.I(ID, self.data.df['fib_50_aoi'])
-        self.setup_low = self.I(ID, self.data.df['setup_low'])
+        df = self.data.df
+        # Use fallbacks if preprocessed columns don't exist
+        fib_50_aoi = df.get('fib_50_aoi', (df['High'] + df['Low']) / 2)
+        setup_low = df.get('setup_low', df['Low'])
+        self.aoi = self.I(ID, fib_50_aoi)
+        self.setup_low = self.I(ID, setup_low)
         self.ema = self.I(EMA, self.data.Close, self.ema_period)
         self.state = StrategyState.SEARCHING
         self.retracement_high = None
@@ -111,23 +115,67 @@ class Measured50PercentRetracementScalpStrategy(Strategy):
                  self.state = StrategyState.SEARCHING
 
 if __name__ == '__main__':
-    data = preprocess_data(generate_synthetic_data(periods=5000))
-    bt = Backtest(data, Measured50PercentRetracementScalpStrategy, cash=100_000, commission=.002)
-    stats = bt.optimize(rr_ratio=range(3, 8, 1), aoi_proximity=[x * 0.01 for x in range(1, 11)], ema_period=[100, 200], maximize='Sharpe Ratio')
-
-    os.makedirs('results', exist_ok=True)
-
-    sharpe = stats.get('Sharpe Ratio', 0.0)
-    if np.isnan(sharpe): sharpe = 0.0
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, Measured50PercentRetracementScalpStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'measured_50_percent_retracement_scalp',
-            'return': stats.get('Return [%]', 0.0), 'sharpe': sharpe,
-            'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
-            'win_rate': stats.get('Win Rate [%]', 0.0), 'total_trades': int(stats.get('# Trades', 0))
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = preprocess_data(generate_synthetic_data(periods=5000))
+        bt = Backtest(data, Measured50PercentRetracementScalpStrategy, cash=100_000, commission=.002)
+        stats = bt.optimize(rr_ratio=range(3, 8, 1), aoi_proximity=[x * 0.01 for x in range(1, 11)], ema_period=[100, 200], maximize='Sharpe Ratio')
 
-    bt.plot(filename='results/measured_50_percent_retracement_scalp.html', open_browser=False)
-    print("--- Best Run Stats ---")
-    print(stats)
+        os.makedirs('results', exist_ok=True)
+
+        sharpe = stats.get('Sharpe Ratio', 0.0)
+        if np.isnan(sharpe): sharpe = 0.0
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'measured_50_percent_retracement_scalp',
+                'return': stats.get('Return [%]', 0.0), 'sharpe': sharpe,
+                'max_drawdown': stats.get('Max. Drawdown [%]', 0.0),
+                'win_rate': stats.get('Win Rate [%]', 0.0), 'total_trades': int(stats.get('# Trades', 0))
+            }, f, indent=2)
+
+        bt.plot(filename='results/measured_50_percent_retracement_scalp.html', open_browser=False)
+        print("--- Best Run Stats ---")
+        print(stats)

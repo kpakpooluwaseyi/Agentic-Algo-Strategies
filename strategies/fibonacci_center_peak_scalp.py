@@ -167,39 +167,77 @@ class FibonacciCenterPeakScalpStrategy(Strategy):
             self.state = 'SCANNING_A'
 
 if __name__ == '__main__':
-    data = generate_synthetic_data(n_patterns=50)
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, FibonacciCenterPeakScalpStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': 'fibonacci_center_peak_scalp',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = generate_synthetic_data(n_patterns=50)
 
-    bt = Backtest(data, FibonacciCenterPeakScalpStrategy, cash=100000, commission=.002)
+        bt = Backtest(data, FibonacciCenterPeakScalpStrategy, cash=100000, commission=.002)
 
-    print("Optimizing strategy...")
-    stats = bt.optimize(
-        swing_confirmation=range(3, 15, 2),
-        fib_tolerance=[i/100 for i in range(2, 8)], # 0.02 to 0.07
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.swing_confirmation > 0
-    )
+        print("Optimizing strategy...")
+        stats = bt.optimize(
+            swing_confirmation=range(3, 15, 2),
+            fib_tolerance=[i/100 for i in range(2, 8)], # 0.02 to 0.07
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.swing_confirmation > 0
+        )
 
-    print("\nBest Run Stats:")
-    print(stats)
+        print("\nBest Run Stats:")
+        print(stats)
 
-    results_dir = 'results'
-    os.makedirs(results_dir, exist_ok=True)
+        results_dir = 'results'
+        os.makedirs(results_dir, exist_ok=True)
 
-    result_data = {
-        'strategy_name': 'fibonacci_center_peak_scalp',
-        'return': float(stats.get('Return [%]', 0.0)),
-        'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
-        'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
-        'win_rate': float(stats.get('Win Rate [%]', 0.0)),
-        'total_trades': int(stats.get('# Trades', 0))
-    }
+        result_data = {
+            'strategy_name': 'fibonacci_center_peak_scalp',
+            'return': float(stats.get('Return [%]', 0.0)),
+            'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
+            'win_rate': float(stats.get('Win Rate [%]', 0.0)),
+            'total_trades': int(stats.get('# Trades', 0))
+        }
 
-    if result_data['total_trades'] == 0:
-        print("Warning: No trades were executed during the backtest.")
+        if result_data['total_trades'] == 0:
+            print("Warning: No trades were executed during the backtest.")
 
-    with open(os.path.join(results_dir, 'temp_result.json'), 'w') as f:
-        json.dump(result_data, f, indent=2)
+        with open(os.path.join(results_dir, 'temp_result.json'), 'w') as f:
+            json.dump(result_data, f, indent=2)
 
-    print(f"Results saved to {os.path.join(results_dir, 'temp_result.json')}")
+        print(f"Results saved to {os.path.join(results_dir, 'temp_result.json')}")
 
-    bt.plot(filename="fibonacci_center_peak_scalp_plot")
+        bt.plot(filename="fibonacci_center_peak_scalp_plot")

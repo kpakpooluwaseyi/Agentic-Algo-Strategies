@@ -219,40 +219,78 @@ def generate_synthetic_data(days=50):
 
 
 if __name__ == '__main__':
-    # Load or generate data
-    data = generate_synthetic_data()
-
-    # Run backtest
-    bt = Backtest(data, SilverBulletFvgRetestStrategy, cash=10000, commission=.002)
-
-    # Optimize
-    sl_range = list(np.arange(0.1, 1.0, 0.1))
-    fvg_range = list(np.arange(0.5, 2.0, 0.5))
-    stats = bt.optimize(stop_loss_pct=sl_range,
-                        swing_distance=range(5, 20, 5),
-                        fvg_invalidation_pct=fvg_range,
-                        maximize='Sharpe Ratio',
-                        max_tries=300)
-
-    # Save results
     import os
-    os.makedirs('results', exist_ok=True)
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, SilverBulletFvgRetestStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
+            'strategy_name': 'silver_bullet_fvg_retest',
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Load or generate data
+        data = generate_synthetic_data()
 
-    # Manually extract the required fields
-    results = {
-        'strategy_name': 'silver_bullet_fvg_retest',
-        'return': float(stats.get('Return [%]', 0.0)),
-        'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
-        'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
-        'win_rate': float(stats.get('Win Rate [%]', 0.0)),
-        'total_trades': int(stats.get('# Trades', 0))
-    }
+        # Run backtest
+        bt = Backtest(data, SilverBulletFvgRetestStrategy, cash=10000, commission=.002)
 
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(results, f, indent=2)
+        # Optimize
+        sl_range = list(np.arange(0.1, 1.0, 0.1))
+        fvg_range = list(np.arange(0.5, 2.0, 0.5))
+        stats = bt.optimize(stop_loss_pct=sl_range,
+                            swing_distance=range(5, 20, 5),
+                            fvg_invalidation_pct=fvg_range,
+                            maximize='Sharpe Ratio',
+                            max_tries=300)
 
-    # Generate plot
-    try:
-        bt.plot(filename='results/silver_bullet_plot.html')
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        # Save results
+        import os
+        os.makedirs('results', exist_ok=True)
+
+        # Manually extract the required fields
+        results = {
+            'strategy_name': 'silver_bullet_fvg_retest',
+            'return': float(stats.get('Return [%]', 0.0)),
+            'sharpe': float(stats.get('Sharpe Ratio', 0.0)),
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0.0)),
+            'win_rate': float(stats.get('Win Rate [%]', 0.0)),
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # Generate plot
+        try:
+            bt.plot(filename='results/silver_bullet_plot.html')
+        except Exception as e:
+            print(f"Could not generate plot: {e}")

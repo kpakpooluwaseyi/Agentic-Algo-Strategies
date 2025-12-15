@@ -104,20 +104,58 @@ class ReversalWM50EmaRsiStrategy(Strategy):
                     self.sell(size=0.5, sl=sl, tp=tp2)
 
 if __name__ == '__main__':
-    data = GOOG
-    bt = Backtest(data, ReversalWM50EmaRsiStrategy, cash=10000, commission=.002)
-    stats = bt.optimize(rsi_period=range(10, 30, 5), ema_50_len=range(40, 60, 5),
-                        distance=range(3, 10, 2), maximize='Sharpe Ratio')
-
-    os.makedirs('results', exist_ok=True)
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, ReversalWM50EmaRsiStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'reversal_w_m_50ema_rsi',
-            'return': float(stats['Return [%]']),
-            'sharpe': float(stats['Sharpe Ratio']),
-            'max_drawdown': float(stats['Max. Drawdown [%]']),
-            'win_rate': float(stats['Win Rate [%]']),
-            'total_trades': int(stats['# Trades'])
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        data = GOOG
+        bt = Backtest(data, ReversalWM50EmaRsiStrategy, cash=10000, commission=.002)
+        stats = bt.optimize(rsi_period=range(10, 30, 5), ema_50_len=range(40, 60, 5),
+                            distance=range(3, 10, 2), maximize='Sharpe Ratio')
 
-    bt.plot()
+        os.makedirs('results', exist_ok=True)
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'reversal_w_m_50ema_rsi',
+                'return': float(stats['Return [%]']),
+                'sharpe': float(stats['Sharpe Ratio']),
+                'max_drawdown': float(stats['Max. Drawdown [%]']),
+                'win_rate': float(stats['Win Rate [%]']),
+                'total_trades': int(stats['# Trades'])
+            }, f, indent=2)
+
+        bt.plot()

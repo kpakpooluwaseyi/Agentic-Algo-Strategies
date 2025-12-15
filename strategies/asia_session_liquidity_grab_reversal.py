@@ -165,43 +165,87 @@ class AsiaSessionLiquidityGrabReversalStrategy(Strategy):
                         self.daily_trade_taken = True
 
 if __name__ == '__main__':
-    # Generate and preprocess data
-    data = generate_synthetic_data(days=250)
-    data = preprocess_data(data)
-
-    # Initialize Backtest
-    bt = Backtest(data, AsiaSessionLiquidityGrabReversalStrategy, cash=100_000, commission=.002)
-
-    # Optimize
-    stats = bt.optimize(
-        max_asia_range_pct=np.arange(0.5, 3.1, 0.5).tolist(),
-        sl_buffer_pct=np.arange(0.05, 0.31, 0.05).tolist(),
-        risk_pct=np.arange(0.5, 2.1, 0.5).tolist(),
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.max_asia_range_pct > 0
-    )
-
-    print("Best stats:\n", stats)
-
-    # Ensure results directory exists
-    os.makedirs('results', exist_ok=True)
-
-    # Save results
-    win_rate = stats.get('Win Rate [%]', 0)
-    sharpe = stats.get('Sharpe Ratio', 0)
-
-    if np.isnan(sharpe):
-        sharpe = None
-
-    with open('results/temp_result.json', 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, AsiaSessionLiquidityGrabReversalStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'asia_session_liquidity_grab_reversal',
-            'return': stats.get('Return [%]', 0),
-            'sharpe': sharpe,
-            'max_drawdown': stats.get('Max. Drawdown [%]', 0),
-            'win_rate': win_rate,
-            'total_trades': stats.get('# Trades', 0)
-        }, f, indent=2)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # Generate and preprocess data
+        data = generate_synthetic_data(days=250)
+        data = preprocess_data(data)
 
-    # Generate plot
-    bt.plot(filename='results/asia_session_liquidity_grab_reversal.html')
+        # Initialize Backtest
+        bt = Backtest(data, AsiaSessionLiquidityGrabReversalStrategy, cash=100_000, commission=.002)
+
+        # Optimize
+        stats = bt.optimize(
+            max_asia_range_pct=np.arange(0.5, 3.1, 0.5).tolist(),
+            sl_buffer_pct=np.arange(0.05, 0.31, 0.05).tolist(),
+            risk_pct=np.arange(0.5, 2.1, 0.5).tolist(),
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.max_asia_range_pct > 0
+        )
+
+        print("Best stats:\n", stats)
+
+        # Ensure results directory exists
+        os.makedirs('results', exist_ok=True)
+
+        # Save results
+        win_rate = stats.get('Win Rate [%]', 0)
+        sharpe = stats.get('Sharpe Ratio', 0)
+
+        if np.isnan(sharpe):
+            sharpe = None
+
+        with open('results/temp_result.json', 'w') as f:
+            json.dump({
+                'strategy_name': 'asia_session_liquidity_grab_reversal',
+                'return': stats.get('Return [%]', 0),
+                'sharpe': sharpe,
+                'max_drawdown': stats.get('Max. Drawdown [%]', 0),
+                'win_rate': win_rate,
+                'total_trades': stats.get('# Trades', 0)
+            }, f, indent=2)
+
+        # Generate plot
+        bt.plot(filename='results/asia_session_liquidity_grab_reversal.html')

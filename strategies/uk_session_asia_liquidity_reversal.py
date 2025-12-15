@@ -193,68 +193,112 @@ class UkSessionAsiaLiquidityReversalStrategy(Strategy):
 
 # --- Backtesting Execution ---
 if __name__ == '__main__':
-    # --- 1. Data Loading and Preprocessing ---
-    # Using synthetic data for a reliable test
-    data = generate_synthetic_data()
-    data = preprocess_data(data)
-
-    # --- 2. Backtest Initialization ---
-    bt = Backtest(data, UkSessionAsiaLiquidityReversalStrategy, cash=100_000, commission=.002)
-
-    # --- 3. Optimization ---
-    print("Optimizing strategy...")
-    stats = bt.optimize(
-        asia_range_max_percent=np.arange(0.5, 3.0, 0.5).tolist(),
-        sl_buffer_pips=np.arange(2, 11, 2).tolist(),
-        maximize='Sharpe Ratio',
-        constraint=lambda p: p.asia_range_max_percent > 0 and p.sl_buffer_pips > 0
-    )
-    print("Best stats found:")
-    print(stats)
-
-    # --- 4. JSON Output Handling ---
-    # A robust function to sanitize results for JSON serialization
-    def sanitize_for_json(obj):
-        if isinstance(obj, (np.integer, np.int64)):
-            return int(obj)
-        elif isinstance(obj, (np.floating, np.float64)):
-            return float(obj)
-        elif isinstance(obj, (np.ndarray,)):
-            return obj.tolist()
-        elif isinstance(obj, pd.Series):
-             return obj.to_dict()
-        elif isinstance(obj, pd.DataFrame):
-             return obj.to_dict(orient='records')
-        elif pd.isna(obj):
-            return None
-        return obj
-
-    # Sanitize the stats dictionary/series
-    sanitized_stats = {key: sanitize_for_json(value) for key, value in stats.items()}
-
-    # Ensure results directory exists
-    os.makedirs('results', exist_ok=True)
-
-    # Save the sanitized results
-    output_path = 'results/temp_result.json'
-    print(f"Saving results to {output_path}...")
-    with open(output_path, 'w') as f:
-        json.dump({
+    import os
+    import json
+    from backtesting import Backtest
+    
+    data_path = os.environ.get('BACKTEST_DATA_PATH')
+    mode = os.environ.get('BACKTEST_MODE', 'standalone')
+    
+    if data_path and os.path.exists(data_path):
+        # === STANDARDIZED MODE ===
+        print(f"[Standardized Mode] Loading data from: {data_path}")
+        data = pd.read_csv(data_path, index_col=0, parse_dates=True)
+        data.columns = [c.title() for c in data.columns]
+        if not isinstance(data.index, pd.DatetimeIndex):
+            data.index = pd.to_datetime(data.index)
+        
+        # Apply preprocessing
+        try:
+            data = preprocess_data(data)
+        except Exception as e:
+            print(f"Preprocessing warning: {e}")
+        
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, UkSessionAsiaLiquidityReversalStrategy, cash=10000, commission=.002)
+        
+        # In standardized mode, always run with defaults (optimization requires strategy-specific params)
+        print("[Run Mode] Running single backtest with defaults...")
+        stats = bt.run()
+        
+        # Save results
+        os.makedirs('results', exist_ok=True)
+        result = {
             'strategy_name': 'uk_session_asia_liquidity_reversal',
-            'return': sanitized_stats.get('Return [%]', None),
-            'sharpe': sanitized_stats.get('Sharpe Ratio', None),
-            'max_drawdown': sanitized_stats.get('Max. Drawdown [%]', None),
-            'win_rate': sanitized_stats.get('Win Rate [%]', None),
-            'total_trades': sanitized_stats.get('# Trades', 0)
-        }, f, indent=4)
+            'return': float(stats.get('Return [%]', 0)) if not pd.isna(stats.get('Return [%]', 0)) else None,
+            'sharpe': float(stats.get('Sharpe Ratio')) if stats.get('Sharpe Ratio') and not pd.isna(stats.get('Sharpe Ratio')) else None,
+            'max_drawdown': float(stats.get('Max. Drawdown [%]', 0)) if not pd.isna(stats.get('Max. Drawdown [%]', 0)) else None,
+            'win_rate': float(stats.get('Win Rate [%]', 0)) if not pd.isna(stats.get('Win Rate [%]', 0)) else None,
+            'total_trades': int(stats.get('# Trades', 0))
+        }
+        with open('results/temp_result.json', 'w') as f:
+            json.dump(result, f, indent=2)
+        print(f"Return={result['return']}%, Trades={result['total_trades']}")
+    else:
+        # === STANDALONE MODE (original behavior) ===
+        print("[Standalone Mode] Using original data generation...")
+        # --- 1. Data Loading and Preprocessing ---
+        # Using synthetic data for a reliable test
+        data = generate_synthetic_data()
+        data = preprocess_data(data)
 
-    # --- 5. Plotting ---
-    plot_path = 'results/uk_session_asia_liquidity_reversal.html'
-    print(f"Generating plot... saved to {plot_path}")
-    try:
-        bt.plot(filename=plot_path, open_browser=False)
-    except TypeError as e:
-        print(f"Could not generate plot due to a known issue with backtesting.py and pandas: {e}")
-        print("Continuing without plot...")
+        # --- 2. Backtest Initialization ---
+        bt = Backtest(data, UkSessionAsiaLiquidityReversalStrategy, cash=100_000, commission=.002)
 
-    print("Backtest complete.")
+        # --- 3. Optimization ---
+        print("Optimizing strategy...")
+        stats = bt.optimize(
+            asia_range_max_percent=np.arange(0.5, 3.0, 0.5).tolist(),
+            sl_buffer_pips=np.arange(2, 11, 2).tolist(),
+            maximize='Sharpe Ratio',
+            constraint=lambda p: p.asia_range_max_percent > 0 and p.sl_buffer_pips > 0
+        )
+        print("Best stats found:")
+        print(stats)
+
+        # --- 4. JSON Output Handling ---
+        # A robust function to sanitize results for JSON serialization
+        def sanitize_for_json(obj):
+            if isinstance(obj, (np.integer, np.int64)):
+                return int(obj)
+            elif isinstance(obj, (np.floating, np.float64)):
+                return float(obj)
+            elif isinstance(obj, (np.ndarray,)):
+                return obj.tolist()
+            elif isinstance(obj, pd.Series):
+                 return obj.to_dict()
+            elif isinstance(obj, pd.DataFrame):
+                 return obj.to_dict(orient='records')
+            elif pd.isna(obj):
+                return None
+            return obj
+
+        # Sanitize the stats dictionary/series
+        sanitized_stats = {key: sanitize_for_json(value) for key, value in stats.items()}
+
+        # Ensure results directory exists
+        os.makedirs('results', exist_ok=True)
+
+        # Save the sanitized results
+        output_path = 'results/temp_result.json'
+        print(f"Saving results to {output_path}...")
+        with open(output_path, 'w') as f:
+            json.dump({
+                'strategy_name': 'uk_session_asia_liquidity_reversal',
+                'return': sanitized_stats.get('Return [%]', None),
+                'sharpe': sanitized_stats.get('Sharpe Ratio', None),
+                'max_drawdown': sanitized_stats.get('Max. Drawdown [%]', None),
+                'win_rate': sanitized_stats.get('Win Rate [%]', None),
+                'total_trades': sanitized_stats.get('# Trades', 0)
+            }, f, indent=4)
+
+        # --- 5. Plotting ---
+        plot_path = 'results/uk_session_asia_liquidity_reversal.html'
+        print(f"Generating plot... saved to {plot_path}")
+        try:
+            bt.plot(filename=plot_path, open_browser=False)
+        except TypeError as e:
+            print(f"Could not generate plot due to a known issue with backtesting.py and pandas: {e}")
+            print("Continuing without plot...")
+
+        print("Backtest complete.")
