@@ -49,6 +49,16 @@
       "start": "2021-08-01",
       "end": "2024-06-01",
       "downloaded": "2024-06-01"
+    },
+    {
+      "name": "BTC_1m",
+      "symbol": "BTC-USDT",
+      "interval": "1m",
+      "path": "crypto/BTC-USDT_1m_52weeks.csv",
+      "rows": 525600,
+      "start": "2023-01-01",
+      "end": "2024-01-01",
+      "downloaded": "2024-01-01"
     }
   ]
 }
