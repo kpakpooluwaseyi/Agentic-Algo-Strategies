@@ -175,11 +175,13 @@ def extract_youtube_id(url: str) -> Optional[str]:
 
 
 def get_youtube_transcript(video_id: str) -> Optional[str]:
-    """Fetch transcript from YouTube video"""
+    """Fetch transcript from YouTube video using new API"""
     try:
-        transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
-        transcript = transcript_list.find_generated_transcript(['en'])
-        text = ' '.join([t['text'] for t in transcript.fetch()])
+        # New YouTubeTranscriptApi v1.x uses instance-based API
+        ytt_api = YouTubeTranscriptApi()
+        transcript = ytt_api.fetch(video_id, languages=['en'])
+        # transcript is now a FetchedTranscript object, iterate to get text
+        text = ' '.join([snippet.text for snippet in transcript])
         logger.info(f"📺 Fetched YouTube transcript: {len(text)} chars")
         return text
     except Exception as e:
