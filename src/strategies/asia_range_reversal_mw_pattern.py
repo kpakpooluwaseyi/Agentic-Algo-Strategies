@@ -79,19 +79,33 @@ class AsiaRangeReversalMwPatternStrategy(Strategy):
     def _calculate_asia_levels(self):
         df = self.data.df.copy()
         ny_time_series = pd.Series(self.ny_time, index=df.index)
+
         normalized_day = ny_time_series.dt.normalize()
         trading_day = np.where(ny_time_series.dt.hour < 20, normalized_day - pd.Timedelta(days=1), normalized_day)
         df['trading_day'] = pd.to_datetime(trading_day)
+
         asia_mask = (ny_time_series.dt.time >= pd.to_datetime('20:00').time()) | (ny_time_series.dt.time < pd.to_datetime('05:00').time())
+
         asia_data = df[asia_mask].copy()
+        if asia_data.empty:
+            return np.full(len(df), np.nan), np.full(len(df), np.nan)
+
         asia_data['body_min'] = asia_data[['Open', 'Close']].min(axis=1)
         asia_data['body_max'] = asia_data[['Open', 'Close']].max(axis=1)
+
         daily_levels = asia_data.groupby('trading_day').agg(asia_lod=('body_min', 'min'), asia_hod=('body_max', 'max'))
+
         merged = pd.merge(df, daily_levels, on='trading_day', how='left').set_index(df.index)
-        return merged['asia_hod'].ffill().values, merged['asia_lod'].ffill().values
+
+        merged['asia_hod'] = merged.groupby('trading_day')['asia_hod'].transform(lambda x: x.ffill().bfill())
+        merged['asia_lod'] = merged.groupby('trading_day')['asia_lod'].transform(lambda x: x.ffill().bfill())
+
+        return merged['asia_hod'].values, merged['asia_lod'].values
 
     def next(self):
         if len(self.data) < self.pattern_lookback: return
+        if np.isnan(self.asia_hod[-1]) or np.isnan(self.asia_lod[-1]): return
+
         current_time = self.ny_time[-1]
 
         if 17 <= current_time.hour < 20: return
