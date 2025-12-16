@@ -177,9 +177,32 @@ def call_openrouter(prompt: str) -> Optional[str]:
 
 
 def get_jules_prs(repo) -> List:
-    """Get all open PRs from Jules (feat/ or feature/ branches)"""
+    """Get all open PRs from Jules (auto-generated branches)
+    
+    Jules branch patterns:
+    - feat/*
+    - feature/*
+    - add-*-strategy-*
+    - *-strategy-{large_number}
+    - jules-*
+    """
     prs = list(repo.get_pulls(state='open'))
-    jules_prs = [pr for pr in prs if pr.head.ref.startswith(('feat/', 'feature/'))]
+    jules_prs = []
+    
+    for pr in prs:
+        branch = pr.head.ref.lower()
+        
+        # Match various Jules patterns
+        is_jules = (
+            branch.startswith(('feat/', 'feature/', 'jules-')) or
+            'strategy' in branch or
+            # Branches with large numeric suffixes are typically auto-generated
+            re.search(r'-\d{10,}$', branch) is not None
+        )
+        
+        if is_jules:
+            jules_prs.append(pr)
+    
     logger.info(f"📋 Found {len(jules_prs)} open Jules PR(s)")
     return jules_prs
 
