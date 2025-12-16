@@ -38,7 +38,7 @@ RESEARCH_INPUTS_DIR = Path("research_inputs")
 PROCESSED_DIR = RESEARCH_INPUTS_DIR / ".processed"
 LOGS_DIR = Path("logs")
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "kpakpooluwaseyi/Agentic-Algo-Strategies")
 
