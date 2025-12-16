@@ -320,7 +320,7 @@ def create_github_issue(repo, strategy: str, source: str, dry_run: bool = False)
         issue = repo.create_issue(
             title=title,
             body=body,
-            labels=["auto-generated", "strategy-request"]
+            labels=["auto-generated", "strategy-request", "jules"]  # jules label triggers Jules AI agent
         )
         
         logger.info(f"✅ Created GitHub Issue #{issue.number}: {title}")
