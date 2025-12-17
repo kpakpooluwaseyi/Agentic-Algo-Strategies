@@ -43,6 +43,7 @@ class SwingTradeConversionStrategy(Strategy):
     sl_buffer_pct = 0.01  # Percentage buffer for stop-loss
     price_proximity_pct = 0.02 # Proximity for pivots in M/W patterns
     sl_to_be_pips = 50.0  # Pips of profit required to move SL to Break-Even
+    enable_reversal_trade = False # Whether to immediately reverse the trade after a Level III exit
 
     def init(self):
         # --- State Variables ---
@@ -152,7 +153,7 @@ class SwingTradeConversionStrategy(Strategy):
         # --- Reset flags when position is closed ---
         if not self.position and self.trade_active:
             # Check if the trade was closed by the Level III exit
-            if self.mm_level >= 3 and self.last_trade_was_long is not None:
+            if self.enable_reversal_trade and self.mm_level >= 3 and self.last_trade_was_long is not None:
                 # Immediate reversal trade with a defined SL
                 if self.last_trade_was_long: # Previous trade was long, so reverse to short
                     sl = self.data.High[-1] * (1 + self.sl_buffer_pct)
