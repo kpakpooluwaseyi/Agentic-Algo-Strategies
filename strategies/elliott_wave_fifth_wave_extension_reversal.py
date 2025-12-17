@@ -4,6 +4,7 @@ import numpy as np
 from scipy.signal import find_peaks
 import json
 import os
+import pandas_ta as ta
 
 def sanitize_stats(stats):
     """Sanitizes the stats dictionary for JSON serialization."""
@@ -21,6 +22,17 @@ def sanitize_stats(stats):
             sanitized[key] = value
     return sanitized
 
+def atr_indicator(high, low, close, length):
+    """Wrapper for pandas-ta ATR to be used with backtesting.py."""
+    high = pd.Series(high)
+    low = pd.Series(low)
+    close = pd.Series(close)
+    atr = ta.atr(high=high, low=low, close=close, length=length)
+    if atr is None:
+        return np.full(len(high), np.nan)
+    return atr.values
+
+
 class ElliottWaveFifthWaveExtensionReversal(Strategy):
     """
     Strategy to identify and trade the reversal after a fifth wave extension
@@ -31,6 +43,10 @@ class ElliottWaveFifthWaveExtensionReversal(Strategy):
     wave_equality_tolerance = 0.20  # Tolerance for comparing wave lengths (20%)
     extension_multiplier = 1.618  # Threshold for identifying a 5th wave extension
 
+    # Parameters for ATR-based Stop Loss
+    atr_period = 14
+    atr_multiplier = 2.0
+
     def init(self):
         """
         Initialize the strategy.
@@ -38,6 +54,8 @@ class ElliottWaveFifthWaveExtensionReversal(Strategy):
         # Using Close prices for wave analysis
         self.price = self.data.Close
         self.volume = self.data.Volume
+        # Calculate ATR
+        self.atr = self.I(atr_indicator, self.data.High, self.data.Low, self.data.Close, length=self.atr_period)
 
     def _find_wave_points(self, data):
         """Finds peaks and troughs in the given data series."""
@@ -139,11 +157,14 @@ class ElliottWaveFifthWaveExtensionReversal(Strategy):
                             low_of_subwave2_idx = wave5_start_idx + sub_troughs[0]
                             take_profit_price = self.price[low_of_subwave2_idx]
 
+                            atr_at_peak = self.atr[abs_indices[5]]
+                            stop_loss_price = p5 + (atr_at_peak * self.atr_multiplier)
+
                             wave_info = {
                                 "indices": abs_indices,
                                 "prices": prices,
                                 "wave5_peak_idx": abs_indices[5],
-                                "stop_loss": p5 * 1.001, # Just above the peak
+                                "stop_loss": stop_loss_price,
                                 "take_profit": take_profit_price
                             }
                             return wave_info
