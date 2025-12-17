@@ -25,14 +25,26 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def is_bullish_engulfing(data):
+    """Checks for a bullish engulfing pattern."""
     if len(data.Open) < 2: return False
-    return (data.Open[-2] > data.Close[-2] and data.Close[-1] > data.Open[-1] and
-            data.Close[-1] >= data.Open[-2] and data.Open[-1] <= data.Close[-2])
+    previous_candle = (data.Open[-2], data.High[-2], data.Low[-2], data.Close[-2])
+    current_candle = (data.Open[-1], data.High[-1], data.Low[-1], data.Close[-1])
+    # Previous candle is bearish, current candle is bullish
+    return (previous_candle[3] < previous_candle[0] and
+            current_candle[3] > current_candle[0] and
+            current_candle[3] > previous_candle[0] and
+            current_candle[0] < previous_candle[3])
 
 def is_bearish_engulfing(data):
+    """Checks for a bearish engulfing pattern."""
     if len(data.Open) < 2: return False
-    return (data.Open[-2] < data.Close[-2] and data.Close[-1] < data.Open[-1] and
-            data.Close[-1] <= data.Open[-2] and data.Open[-1] >= data.Close[-2])
+    previous_candle = (data.Open[-2], data.High[-2], data.Low[-2], data.Close[-2])
+    current_candle = (data.Open[-1], data.High[-1], data.Low[-1], data.Close[-1])
+    # Previous candle is bullish, current candle is bearish
+    return (previous_candle[3] > previous_candle[0] and
+            current_candle[3] < current_candle[0] and
+            current_candle[0] > previous_candle[3] and
+            current_candle[3] < previous_candle[0])
 
 def is_hammer(data, target_wick_ratio=2, max_body_ratio=0.3):
     body = abs(data.Open[-1] - data.Close[-1])
@@ -61,7 +73,10 @@ def sanitize_stats(stats):
     return sanitized
 
 class QuickFlipScalperStrategy(Strategy):
-    atr_threshold_pct = 25
+    # NOTE: atr_threshold_pct is lowered to 15 from the original 25 to adapt
+    # the strategy for the 24/7 crypto market, which doesn't have a distinct
+    # high-volatility "opening" like traditional stock markets.
+    atr_threshold_pct = 15
     sl_buffer_pct = 1.0
     entry_window_minutes = 90
 
