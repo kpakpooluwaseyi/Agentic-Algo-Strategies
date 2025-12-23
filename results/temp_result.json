@@ -1,8 +1,8 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+  "strategy_name": "smb_ma_dip_buy",
+  "return": -74.98803589400032,
+  "sharpe": -21.33482510647711,
+  "max_drawdown": -75.04111770109894,
+  "win_rate": 17.594936708860757,
+  "total_trades": 790
 }
