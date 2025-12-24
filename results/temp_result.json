@@ -1,8 +1,8 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+  "strategy_name": "gann_principles_trend_following",
+  "return": -20.30083609588347,
+  "sharpe": -4.268003978700544,
+  "max_drawdown": -23.77079550296046,
+  "win_rate": 13.549160671462829,
+  "total_trades": 834
 }
