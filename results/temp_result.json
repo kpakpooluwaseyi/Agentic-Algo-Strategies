@@ -1,8 +1,8 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
+  "strategy_name": "weinstein_trader_stage_analysis",
   "return": 0.0,
-  "sharpe": NaN,
+  "sharpe": null,
   "max_drawdown": -0.0,
-  "win_rate": NaN,
+  "win_rate": null,
   "total_trades": 0
 }
