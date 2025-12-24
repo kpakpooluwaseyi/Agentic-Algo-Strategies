@@ -8,7 +8,6 @@ PyPDF2==3.0.0
 pandas
 termcolor==2.3.0
 numpy
-pandas-ta
 schedule==1.2.0
 python-dateutil==2.8.2
 backoff==2.2.1
@@ -16,5 +15,4 @@ youtube-transcript-api==0.6.2
 openai==1.59.5
 Backtesting
 scipy
-# Add any other dependencies your agents need
-scipy
+pandas-ta
