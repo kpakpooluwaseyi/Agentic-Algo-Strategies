@@ -5,9 +5,7 @@ jinja2==3.1.2
 python-dotenv==1.0.0
 requests==2.31.0
 PyPDF2==3.0.0
-pandas
 termcolor==2.3.0
-numpy
 pandas-ta
 schedule==1.2.0
 python-dateutil==2.8.2
@@ -17,4 +15,7 @@ openai==1.59.5
 Backtesting
 scipy
 # Add any other dependencies your agents need
-scipy
+numpy
+pandas
+scikit-learn
+backtesting
