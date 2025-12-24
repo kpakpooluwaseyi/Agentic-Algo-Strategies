@@ -17,4 +17,3 @@ openai==1.59.5
 Backtesting
 scipy
 # Add any other dependencies your agents need
-scipy
