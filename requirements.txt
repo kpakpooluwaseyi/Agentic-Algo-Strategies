@@ -18,3 +18,4 @@ Backtesting
 scipy
 # Add any other dependencies your agents need
 scipy
+TA-Lib
