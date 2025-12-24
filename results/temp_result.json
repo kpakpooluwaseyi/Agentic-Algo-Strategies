@@ -1,8 +1,8 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+    "strategy_name": "option_lower_bound_arbitrage_call",
+    "return_pct": -0.026671213649772107,
+    "sharpe_ratio": -0.20359290883679376,
+    "max_drawdown_pct": -0.6927336053286104,
+    "win_rate_pct": 66.66666666666666,
+    "num_trades": 3
 }
