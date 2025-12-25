@@ -1,8 +1,42 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+  "strategy_name": "fifty_two_week_high_relative_strength",
+  "parameters": {
+    "proximity_pct": 0.05,
+    "sl_pct": 0.1,
+    "tp_pct": 0.2
+  },
+  "stats": {
+    "Start": "2023-01-01T00:00:00",
+    "End": "2023-11-20T19:15:00",
+    "Duration": "323 days 19:15:00",
+    "Exposure Time [%]": 65.61514195583597,
+    "Equity Final [$]": 134572.71551199997,
+    "Equity Peak [$]": 160644.40274399996,
+    "Commissions [$]": 3456.1684880000003,
+    "Return [%]": 34.57271551199997,
+    "Buy & Hold Return [%]": 127.76869955580645,
+    "Return (Ann.) [%]": 39.30412979145217,
+    "Volatility (Ann.) [%]": 47.384651918711,
+    "CAGR [%]": 39.75406442982419,
+    "Sharpe Ratio": 0.829469632042015,
+    "Sortino Ratio": 1.9692577062654737,
+    "Calmar Ratio": 1.5734284082466323,
+    "Alpha [%]": -45.76623938510064,
+    "Beta": 0.6287843202318137,
+    "Max. Drawdown [%]": -24.979928915387497,
+    "Avg. Drawdown [%]": -1.3962585600872066,
+    "Max. Drawdown Duration": "220 days 12:30:00",
+    "Avg. Drawdown Duration": "3 days 17:08:00",
+    "# Trades": 7,
+    "Win Rate [%]": 57.14285714285714,
+    "Best Trade [%]": 19.57194509145629,
+    "Worst Trade [%]": -10.387710411304342,
+    "Avg. Trade [%]": 4.434846097979017,
+    "Max. Trade Duration": "57 days 06:30:00",
+    "Avg. Trade Duration": "30 days 08:24:00",
+    "Profit Factor": 2.209933243656052,
+    "Expectancy [%]": 5.383129346162769,
+    "SQN": 0.7153478678279142,
+    "Kelly Criterion": 0.25800950591190175
+  }
 }
