@@ -1,8 +1,8 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+  "strategy_name": "black_scholes_european_option_delta_hedging",
+  "return": 35.4402896697,
+  "sharpe": 2.0878770485747813,
+  "max_drawdown": -5.221681359598806,
+  "win_rate": 96.09704641350211,
+  "total_trades": 948
 }
