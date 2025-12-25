@@ -1,8 +1,9 @@
 {
-  "strategy_name": "mow_internal_50_percent_fib_scalp",
-  "return": 0.0,
-  "sharpe": NaN,
-  "max_drawdown": -0.0,
-  "win_rate": NaN,
-  "total_trades": 0
+    "strategy_name": "MovingAverageBandsReversalStrategy",
+    "return_pct": 34.17007013945369,
+    "sharpe_ratio": 0.6118090297322079,
+    "max_drawdown_pct": -30.978418697797096,
+    "win_rate_pct": 39.02439024390244,
+    "num_trades": 41,
+    "duration": "323 days 19:15:00"
 }
