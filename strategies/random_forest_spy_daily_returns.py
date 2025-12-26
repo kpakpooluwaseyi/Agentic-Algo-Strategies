@@ -121,18 +121,30 @@ def run_backtest(df):
     print(stats)
     bt.plot(filename='results/random_forest_spy_daily_returns.html')
 
-    # Save stats to json
-    stats_dict = stats.to_dict()
+    # Save stats to json using a whitelist of safe metrics
+    safe_metrics = [
+        'Start', 'End', 'Duration', 'Exposure Time [%]', 'Equity Final [$]',
+        'Equity Peak [$]', 'Return [%]', 'Buy & Hold Return [%]', 'Return (Ann.) [%]',
+        'Volatility (Ann.) [%]', 'Sharpe Ratio', 'Sortino Ratio', 'Calmar Ratio',
+        '# Trades', 'Win Rate [%]', 'Best Trade [%]', 'Worst Trade [%]',
+        'Avg. Trade [%]', 'Profit Factor', 'Expectancy [%]', 'SQN'
+    ]
 
-    # a json serializable version of the stats
     json_stats = {}
-    for key, value in stats_dict.items():
-        if isinstance(value, (int, float, str, bool, type(None))):
-            json_stats[key] = value
-        elif isinstance(value, pd.Timestamp):
+    for key in safe_metrics:
+        value = stats.get(key)
+
+        if value is None:
+            continue
+
+        if isinstance(value, pd.Timestamp):
             json_stats[key] = value.isoformat()
         elif isinstance(value, pd.Timedelta):
             json_stats[key] = str(value)
+        elif isinstance(value, (np.integer, np.floating)):
+            json_stats[key] = value.item()
+        elif isinstance(value, (int, float, str, bool)):
+            json_stats[key] = value
         else:
             json_stats[key] = str(value)
 
