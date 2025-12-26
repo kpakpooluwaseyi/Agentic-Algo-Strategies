@@ -186,7 +186,7 @@ if __name__ == '__main__':
             'Volume': np.random.rand(1000) * 100
         }, index=pd.to_datetime(pd.date_range('2023-01-01', periods=1000, freq='15min')))
     else:
-        data = pd.read_csv(data_path, index_col='datetime', parse_dates=True, skipinitialspace=True)
+        data = pd.read_csv(data_path, index_col='datetime', parse_dates=True)
         # Ensure column names are in the format Backtesting.py expects
         data.columns = [col.strip().capitalize() for col in data.columns]
 
