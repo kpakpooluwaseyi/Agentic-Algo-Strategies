@@ -97,6 +97,42 @@ class PortfolioAnalyzer(Strategy):
         if not self.position:
             self.buy()
 
+# --- New Sanitization Function ---
+def sanitize_stats_for_json(stats):
+    """
+    Sanitizes the backtest stats object for JSON serialization using a strict allowlist.
+    """
+    allowed_keys = {
+        'Start', 'End', 'Duration', 'Exposure Time [%]', 'Equity Final [$]',
+        'Equity Peak [$]', 'Return [%]', 'Buy & Hold Return [%]', 'Return (Ann.) [%]',
+        'Volatility (Ann.) [%]', 'Sharpe Ratio', 'Sortino Ratio', 'Calmar Ratio',
+        'Max. Drawdown [%]', 'Avg. Drawdown [%]', 'Max. Drawdown Duration',
+        'Avg. Drawdown Duration', '# Trades', 'Win Rate [%]', 'Best Trade [%]',
+        'Worst Trade [%]', 'Avg. Trade [%]', 'Max. Trade Duration',
+        'Avg. Trade Duration', 'Profit Factor', 'Expectancy [%]', 'SQN'
+    }
+
+    sanitized = {}
+    for key in allowed_keys:
+        if key in stats:
+            value = stats[key]
+            # Handle non-native types
+            if isinstance(value, (np.integer, np.int64)):
+                sanitized[key] = int(value)
+            elif isinstance(value, (np.floating, np.float64)):
+                sanitized[key] = float(value) if pd.notna(value) else None
+            elif isinstance(value, pd.Timestamp):
+                sanitized[key] = value.isoformat()
+            elif isinstance(value, pd.Timedelta):
+                sanitized[key] = str(value)
+            elif pd.isna(value):
+                sanitized[key] = None
+            elif isinstance(value, (str, int, float, bool)):
+                sanitized[key] = value
+            # Skip any other types, including complex objects
+    return sanitized
+
+
 # --- Step 4: Backtesting Execution ---
 if __name__ == '__main__':
     data_path = 'data/BTC-USD-15m.csv'
@@ -130,20 +166,9 @@ if __name__ == '__main__':
         plot_filename = os.path.join(output_dir, 'fama_french_next_day_predictive.html')
         bt.plot(filename=plot_filename)
 
-        # Sanitize and save stats
-        stats_dict = dict(stats)
-        for key, value in list(stats_dict.items()):
-            if isinstance(value, (np.integer, np.int64)):
-                stats_dict[key] = int(value)
-            elif isinstance(value, np.floating):
-                stats_dict[key] = float(value)
-            elif isinstance(value, pd.Timestamp):
-                stats_dict[key] = value.isoformat()
-            elif isinstance(value, pd.Timedelta):
-                stats_dict[key] = str(value)
-            elif key in ['_strategy', '_equity_curve', '_trades']:
-                 stats_dict.pop(key, None)
+        # Sanitize and save stats using the new function
+        sanitized_stats = sanitize_stats_for_json(stats)
 
         with open(os.path.join(output_dir, 'temp_result.json'), 'w') as f:
-            json.dump(stats_dict, f, indent=4)
+            json.dump(sanitized_stats, f, indent=4)
         print(f"Backtest finished. Plot: {plot_filename}")
