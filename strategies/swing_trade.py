@@ -55,6 +55,8 @@ class SwingTradeStrategy(Strategy):
     level_1_bars = 4 * 8     # 8 hours
     london_hunt_bars = 4 * 3  # 3 hours
     reversal_exit_pct = 1.5  # 1.5% reversal from peak to exit in Level III
+    pullback_pct = 0.2       # 0.2% pullback to trigger scale-in setup
+    breakout_pct = 0.1       # 0.1% above peak to confirm scale-in entry
 
     # Parameters for 3-day cycle proxy
     cycle_lookback_bars = 96 * 3 # 3 days of 15-min candles
@@ -76,6 +78,8 @@ class SwingTradeStrategy(Strategy):
         self.trade_level = 0
         self.bars_in_trade = 0
         self.trade_peak_price = 0
+        self.scaled_in = False
+        self.pullback_detected = False
 
         # State for 3-day cycle
         self.peak_formation_bar = 0
@@ -95,12 +99,36 @@ class SwingTradeStrategy(Strategy):
                 if profit_pct >= self.profit_pct_to_be:
                     trade.sl = trade.entry_price
                     self.trade_level = 1
+                    self.trade_peak_price = self.data.High[-1] if self.position.is_long else self.data.Low[-1]
+
+            # === Scale-In Logic ===
+            if self.trade_level >= 1 and not self.scaled_in:
+                if self.position.is_long:
+                    self.trade_peak_price = max(self.trade_peak_price, self.data.High[-1])
+                    pullback_target = self.trade_peak_price * (1 - self.pullback_pct / 100)
+                    if not self.pullback_detected and self.data.Close[-1] < pullback_target:
+                        self.pullback_detected = True
+                    if self.pullback_detected and self.data.Close[-1] > self.trade_peak_price * (1 + self.breakout_pct / 100):
+                        self.buy(size=0.5, sl=trade.entry_price) # Scale in with 50% of initial size
+                        self.scaled_in = True
+                else: # Short position
+                    self.trade_peak_price = min(self.trade_peak_price, self.data.Low[-1])
+                    pullback_target = self.trade_peak_price * (1 + self.pullback_pct / 100)
+                    if not self.pullback_detected and self.data.Close[-1] > pullback_target:
+                        self.pullback_detected = True
+                    if self.pullback_detected and self.data.Close[-1] < self.trade_peak_price * (1 - self.breakout_pct / 100):
+                        self.sell(size=0.5, sl=trade.entry_price) # Scale in with 50% of initial size
+                        self.scaled_in = True
 
             # Level 1 & 2: Time-based SL adjustments
             if self.trade_level == 1 and self.bars_in_trade > self.level_1_bars: self.trade_level = 2
             if self.trade_level == 2 and self.bars_in_trade > (self.level_1_bars + self.london_hunt_bars):
-                if self.position.is_long: trade.sl = self.prev_asia_low[-1]
-                else: trade.sl = self.prev_asia_high[-1]
+                if self.position.is_long:
+                    for t in self.trades:
+                        t.sl = self.prev_asia_low[-1]
+                else:
+                    for t in self.trades:
+                        t.sl = self.prev_asia_high[-1]
                 self.trade_level = 3
                 self.trade_peak_price = self.data.High[-1] if self.position.is_long else self.data.Low[-1]
 
@@ -122,6 +150,9 @@ class SwingTradeStrategy(Strategy):
         self.trade_level = 0
         self.bars_in_trade = 0
         self.trade_peak_price = 0
+        self.scaled_in = False
+        self.pullback_detected = False
+
 
         # === 3-Day Cycle Peak Formation Logic ===
         if current_bar > self.cycle_lookback_bars:
