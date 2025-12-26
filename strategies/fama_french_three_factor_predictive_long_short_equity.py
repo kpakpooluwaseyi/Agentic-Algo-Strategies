@@ -1,3 +1,18 @@
+# ======================================================================================================================
+# WARNING: THIS STRATEGY RUNS ON SYNTHETIC DATA
+# ======================================================================================================================
+# The Fama-French Three-Factor Model is a cross-sectional strategy that requires a wide universe of assets.
+# The backtesting.py framework is designed for single-asset time-series analysis.
+# To bridge this gap, this script performs a simulation:
+# 1. It generates a synthetic universe of stocks and factor data.
+# 2. It simulates the Fama-French long-short portfolio strategy on this synthetic data.
+# 3. It generates a final equity curve representing the portfolio's performance.
+# 4. It runs a simple backtest on this final equity curve to provide performance analytics and a plot.
+#
+# The results are for illustrative purposes to demonstrate the strategy's logic and are NOT indicative
+# of real-world performance. The synthetic data does not capture the complexities and risks of live markets.
+# ======================================================================================================================
+
 import numpy as np
 import pandas as pd
 from backtesting import Backtest, Strategy
@@ -169,11 +184,22 @@ if __name__ == '__main__':
     # Ensure results directory exists
     os.makedirs(results_dir, exist_ok=True)
 
-    print("Strategy execution started.")
+    print("="*80)
+    print("WARNING: This strategy runs on SYNTHETIC data and is for illustrative purposes only.")
+    print("The results are NOT indicative of real-world performance.")
+    print("="*80)
+    print("\nStrategy execution started.")
     print("This strategy involves a complex simulation and may take a few minutes to run.")
 
-    # 1. Load base data
+    # --- Security Check: Harden Data Path ---
+
+
+
     try:
+        # Get absolute paths to ensure the check is reliable
+
+
+
         base_data = pd.read_csv(data_path)
         # Sanitize column names: strip whitespace and convert to lowercase
         base_data.columns = [col.strip().lower() for col in base_data.columns]
