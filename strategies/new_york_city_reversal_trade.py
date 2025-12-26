@@ -8,10 +8,17 @@ import os
 
 def preprocess_data(df):
     """Calculates daily levels and maps them into the main dataframe, preserving the index."""
-    # Ensure index is a DatetimeIndex and localize to UTC, then convert to NY time
+    # Ensure index is a DatetimeIndex
     if not isinstance(df.index, pd.DatetimeIndex):
         df.index = pd.to_datetime(df.index)
-    df.index = df.index.tz_localize('UTC').tz_convert('America/New_York')
+
+    # Safely handle timezone conversion to America/New_York for session timing.
+    if df.index.tz is None:
+        # Assume naive timestamps from the CSV are UTC.
+        df.index = df.index.tz_localize('UTC').tz_convert('America/New_York')
+    else:
+        # If timezone is already set, just convert it.
+        df.index = df.index.tz_convert('America/New_York')
 
     # Calculate daily high, low, and ADR
     daily_df = df.resample('D').agg({
@@ -30,7 +37,9 @@ def preprocess_data(df):
     daily_df['Prev_High'] = daily_df['High'].shift(1)
     daily_df['Prev_Low'] = daily_df['Low'].shift(1)
 
-    # Map daily data to the 15m timeframe using the normalized index
+    # Map daily data to the 15m timeframe.
+    # .normalize() is used to strip the time component, leaving only the date.
+    # This is a safe and standard way to align intraday data with daily metrics.
     df['Prev_ADR_High'] = df.index.normalize().map(daily_df['Prev_ADR_High'])
     df['Prev_ADR_Low'] = df.index.normalize().map(daily_df['Prev_ADR_Low'])
     df['Prev_High'] = df.index.normalize().map(daily_df['Prev_High'])
