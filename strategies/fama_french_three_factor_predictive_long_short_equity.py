@@ -192,15 +192,18 @@ if __name__ == '__main__':
     print("This strategy involves a complex simulation and may take a few minutes to run.")
 
     # --- Security Check: Harden Data Path ---
+    data_dir = os.path.abspath('data')
+    requested_file_path = os.path.abspath(data_path)
 
+    if not requested_file_path.startswith(data_dir):
+        print(f"Error: Security risk. Attempted to access file outside of the 'data' directory: {data_path}")
+        with open(results_file, 'w') as f:
+            json.dump({"error": "Security risk: Invalid data path."}, f)
+        exit()
 
-
+    # 1. Load base data
     try:
-        # Get absolute paths to ensure the check is reliable
-
-
-
-        base_data = pd.read_csv(data_path)
+        base_data = pd.read_csv(requested_file_path)
         # Sanitize column names: strip whitespace and convert to lowercase
         base_data.columns = [col.strip().lower() for col in base_data.columns]
     except FileNotFoundError:
