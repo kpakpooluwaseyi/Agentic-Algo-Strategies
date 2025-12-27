@@ -52,6 +52,19 @@ def preprocess_data(data_path):
     df.columns = [c.strip().lower() for c in df.columns]
     df = df.loc[:, ~df.columns.str.contains('^unnamed')] # Drop unnamed columns
 
+    # Harden data loading by ensuring OHLCV columns are numeric
+    numeric_cols = ['open', 'high', 'low', 'close', 'volume']
+    for col in numeric_cols:
+        if not pd.api.types.is_numeric_dtype(df[col]):
+            # Coerce to numeric, and if any values fail (become NaN), raise an error.
+            original_nas = df[col].isna().sum()
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+            if df[col].isna().sum() > original_nas:
+                raise ValueError(
+                    f"Column '{col}' contains non-numeric values that could not be parsed. "
+                    "This may indicate a malformed or malicious CSV file."
+                )
+
     df['datetime'] = pd.to_datetime(df['datetime'])
     df.set_index('datetime', inplace=True)
 
