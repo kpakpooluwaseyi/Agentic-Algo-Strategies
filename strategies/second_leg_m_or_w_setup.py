@@ -39,6 +39,24 @@ def preprocess_data(df):
 def passthrough(data, **kwargs):
     return data
 
+def validate_data(df):
+    """Validates the structure and content of the loaded dataframe."""
+    required_columns = ['Open', 'High', 'Low', 'Close']
+    if not all(col in df.columns for col in required_columns):
+        raise ValueError(f"Dataframe must contain the following columns: {required_columns}")
+
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("Dataframe index must be a DatetimeIndex.")
+
+    for col in required_columns:
+        if not pd.api.types.is_numeric_dtype(df[col]):
+            raise ValueError(f"Column '{col}' must be of numeric type.")
+
+    if not (df['High'] >= df['Low']).all():
+        raise ValueError("High must be greater than or equal to Low for all rows.")
+
+    return True
+
 # --- Strategy Definition ---
 class SecondLegMWSetupStrategy(Strategy):
     # --- Strategy Parameters ---
@@ -189,6 +207,7 @@ if __name__ == '__main__':
         data = pd.read_csv(data_path, index_col='datetime', parse_dates=True)
         # Ensure column names are in the format Backtesting.py expects
         data.columns = [col.strip().capitalize() for col in data.columns]
+        validate_data(data)
 
     # --- Preprocess Data ---
     data = preprocess_data(data)
