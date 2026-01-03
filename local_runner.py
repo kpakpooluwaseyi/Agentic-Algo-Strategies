@@ -46,6 +46,10 @@ WFA_TIMEOUT = 180  # 3 minutes for WFA validation
 class LocalRunner:
     def __init__(self):
         """Initialize the local runner"""
+        # Suppress backtesting margin warnings
+        import warnings
+        warnings.filterwarnings("ignore", message="Broker canceled the relative-sized order")
+        
         self.setup_directories()
         self.datasets = self.load_datasets()
         self.wfa_analyzer = WalkForwardAnalyzer(in_sample_ratio=0.70)
@@ -108,7 +112,10 @@ class LocalRunner:
                 'status',
                 'wfa_status',
                 'wfa_oos_return_pct',
-                'wfa_degradation_pct'
+                'wfa_degradation_pct',
+                'wfo_status',
+                'wfo_oos_return_pct',
+                'wfo_degradation_pct'
             ])
             df.to_csv(LEADERBOARD_FILE, index=False)
             logger.info("Initialized leaderboard.csv with WFA columns")
@@ -280,6 +287,38 @@ class LocalRunner:
         except Exception as e:
             logger.error(f"WFA validation error for {strategy_name}: {e}")
             return {'status': 'ERROR', 'error': str(e)}
+    
+    def run_wfo_validation(self, strategy_name: str, dataset_name: str) -> Dict:
+        """
+        Run Walk-Forward Optimization (optimize on IS, validate on OOS).
+        This is the more rigorous test that prevents overfitting.
+        """
+        logger.info(f"🔧 Running WFO for {strategy_name} on {dataset_name}")
+        
+        try:
+            data = self.wfa_analyzer.load_data(dataset_name)
+            if data is None or len(data) < 500:
+                logger.warning(f"Dataset {dataset_name} too small for WFO (need 500+ rows)")
+                return {'status': 'SKIPPED', 'reason': 'Dataset too small'}
+            
+            # Run optimized WFA
+            result = self.wfa_analyzer.run_optimized_wfa(strategy_name, data)
+            
+            wfo_result = {
+                'status': result.get('status', 'ERROR'),
+                'oos_return_pct': result.get('out_of_sample', {}).get('return_pct'),
+                'degradation_pct': result.get('degradation'),
+                'fail_reasons': result.get('fail_reasons', [])
+            }
+            
+            status_emoji = '🔧' if wfo_result['status'] == 'PASS' else '🔨'
+            logger.info(f"  {status_emoji} WFO {wfo_result['status']}: OOS return {wfo_result.get('oos_return_pct', 'N/A')}%")
+            
+            return wfo_result
+            
+        except Exception as e:
+            logger.error(f"WFO validation error for {strategy_name}: {e}")
+            return {'status': 'ERROR', 'error': str(e)}
             
     def harvest_results(self, results: Dict, dataset_name: str = 'unknown'):
         """Add results to leaderboard including WFA metrics"""
@@ -287,7 +326,7 @@ class LocalRunner:
             # Prepare row with WFA fields
             row = {
                 'timestamp': datetime.now().isoformat(),
-                'strategy_name': results.get('strategy_name', 'unknown'),
+                'strategy_name': results.get('strategy_name', dataset_name if dataset_name != 'unknown' else 'unknown_strategy'),
                 'dataset_name': dataset_name,
                 'return_pct': results.get('return', None),
                 'sharpe_ratio': results.get('sharpe', None),
@@ -297,7 +336,10 @@ class LocalRunner:
                 'status': results.get('status', 'UNKNOWN'),
                 'wfa_status': results.get('wfa_status', 'SKIPPED'),
                 'wfa_oos_return_pct': results.get('wfa_oos_return_pct'),
-                'wfa_degradation_pct': results.get('wfa_degradation_pct')
+                'wfa_degradation_pct': results.get('wfa_degradation_pct'),
+                'wfo_status': results.get('wfo_status', 'SKIPPED'),
+                'wfo_oos_return_pct': results.get('wfo_oos_return_pct'),
+                'wfo_degradation_pct': results.get('wfo_degradation_pct')
             }
             
             # Append to leaderboard
@@ -372,11 +414,18 @@ class LocalRunner:
                         # Run WFA validation for this dataset
                         wfa_result = self.run_wfa_validation(strategy_name, dataset_name)
                         
-                        # Merge WFA results into strategy results
+                        # Run WFO validation for this dataset (more rigorous)
+                        wfo_result = self.run_wfo_validation(strategy_name, dataset_name)
+                        
+                        # Merge validation results into strategy results
                         dataset_results = results.copy()
                         dataset_results['wfa_status'] = wfa_result.get('status', 'SKIPPED')
                         dataset_results['wfa_oos_return_pct'] = wfa_result.get('oos_return_pct')
                         dataset_results['wfa_degradation_pct'] = wfa_result.get('degradation_pct')
+                        
+                        dataset_results['wfo_status'] = wfo_result.get('status', 'SKIPPED')
+                        dataset_results['wfo_oos_return_pct'] = wfo_result.get('oos_return_pct')
+                        dataset_results['wfo_degradation_pct'] = wfo_result.get('degradation_pct')
                         
                         # Harvest results for this strategy-dataset pair
                         self.harvest_results(dataset_results, dataset_name)

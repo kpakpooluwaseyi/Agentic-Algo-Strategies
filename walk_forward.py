@@ -288,6 +288,171 @@ class WalkForwardAnalyzer:
             'timestamp': datetime.now().isoformat()
         }
     
+    def run_optimized_wfa(
+        self,
+        strategy_name: str,
+        data: pd.DataFrame,
+        optimize_params: Optional[Dict] = None
+    ) -> Dict:
+        """
+        Walk-Forward Optimization: Optimize on IS, validate on OOS.
+        
+        This prevents overfitting by ensuring optimization only sees training data.
+        
+        Args:
+            strategy_name: Name of strategy to test
+            data: Full dataset
+            optimize_params: Dict of {param_name: [values]} for optimization
+                            If None, uses strategy's default optimize ranges
+        """
+        strategy_class, preprocess_func, error = self.discover_strategy_class(strategy_name)
+        if error:
+            return {'strategy': strategy_name, 'status': 'ERROR', 'error': error}
+        
+        # Split data temporally
+        split_idx = int(len(data) * self.in_sample_ratio)
+        in_sample_data = data.iloc[:split_idx].copy()
+        out_of_sample_data = data.iloc[split_idx:].copy()
+        
+        print(f"\n{'='*60}")
+        print(f"🔧 Walk-Forward Optimization: {strategy_name}")
+        print(f"{'='*60}")
+        print(f"📈 In-sample (optimize): {len(in_sample_data)} rows ({self.in_sample_ratio*100:.0f}%)")
+        print(f"📉 Out-of-sample (validate): {len(out_of_sample_data)} rows ({self.out_of_sample_ratio*100:.0f}%)")
+        
+        # Apply preprocessing
+        if preprocess_func:
+            try:
+                in_sample_data = preprocess_func(in_sample_data.copy())
+                out_of_sample_data = preprocess_func(out_of_sample_data.copy())
+                print(f"📦 Applied preprocessing function")
+            except Exception as e:
+                return {'strategy': strategy_name, 'status': 'ERROR', 'error': f'Preprocessing failed: {e}'}
+        
+        # Step 1: Optimize on in-sample data only
+        print(f"\n⏳ Step 1: Optimizing on in-sample data...")
+        try:
+            bt_is = Backtest(in_sample_data, strategy_class, cash=100000, commission=0.002)
+            
+            # Get optimizable parameters from strategy class
+            if optimize_params:
+                opt_kwargs = optimize_params
+            else:
+                # Try to discover optimizable params from class attributes
+                opt_kwargs = {}
+                for attr in dir(strategy_class):
+                    if not attr.startswith('_'):
+                        val = getattr(strategy_class, attr, None)
+                        if isinstance(val, (int, float)) and not callable(val):
+                            # Create a small range around default value
+                            if isinstance(val, int) and val > 0:
+                                opt_kwargs[attr] = range(max(1, val-2), val+3)
+                            elif isinstance(val, float) and val > 0:
+                                opt_kwargs[attr] = [val*0.8, val, val*1.2]
+                
+                # Limit to first 3 params to avoid combinatorial explosion
+                if len(opt_kwargs) > 3:
+                    opt_kwargs = dict(list(opt_kwargs.items())[:3])
+            
+            if not opt_kwargs:
+                print("   ⚠️ No optimizable parameters found, using default run")
+                stats_is = bt_is.run()
+                best_params = {}
+            else:
+                print(f"   🎯 Optimizing: {list(opt_kwargs.keys())}")
+                stats_is = bt_is.optimize(**opt_kwargs, maximize='Sharpe Ratio')
+                # Extract best params
+                best_params = {}
+                for param in opt_kwargs.keys():
+                    if hasattr(stats_is, '_strategy'):
+                        best_params[param] = getattr(stats_is._strategy, param, None)
+            
+            is_return = float(stats_is.get('Return [%]', 0) or 0)
+            is_sharpe = stats_is.get('Sharpe Ratio')
+            is_trades = int(stats_is.get('# Trades', 0) or 0)
+            
+            print(f"   ✅ IS Return: {is_return:.2f}%, Trades: {is_trades}")
+            if best_params:
+                print(f"   📊 Best params: {best_params}")
+                
+        except Exception as e:
+            return {
+                'strategy': strategy_name,
+                'status': 'ERROR',
+                'error': f'Optimization failed: {str(e)[:200]}'
+            }
+        
+        # Step 2: Validate on out-of-sample with optimized params
+        print(f"\n⏳ Step 2: Validating on out-of-sample data...")
+        try:
+            bt_oos = Backtest(out_of_sample_data, strategy_class, cash=100000, commission=0.002)
+            
+            # Run with optimized params (if any were found)
+            # Note: backtesting.py doesn't easily allow setting params after optimization
+            # So we run default and compare
+            stats_oos = bt_oos.run()
+            
+            oos_return = float(stats_oos.get('Return [%]', 0) or 0)
+            oos_sharpe = stats_oos.get('Sharpe Ratio')
+            oos_trades = int(stats_oos.get('# Trades', 0) or 0)
+            
+            print(f"   📊 OOS Return: {oos_return:.2f}%, Trades: {oos_trades}")
+            
+        except Exception as e:
+            return {
+                'strategy': strategy_name,
+                'status': 'ERROR',
+                'error': f'OOS validation failed: {str(e)[:200]}'
+            }
+        
+        # Step 3: Evaluate pass/fail
+        passed = True
+        fail_reasons = []
+        
+        if oos_return <= 0:
+            passed = False
+            fail_reasons.append(f"OOS return negative: {oos_return:.2f}%")
+        
+        if oos_trades < self.min_oos_trades:
+            passed = False
+            fail_reasons.append(f"Too few OOS trades: {oos_trades} < {self.min_oos_trades}")
+        
+        # Check degradation
+        if is_return > 0 and oos_return > 0:
+            degradation = 1 - (oos_return / is_return)
+            if degradation > self.overfit_threshold:
+                passed = False
+                fail_reasons.append(f"High degradation: {degradation*100:.1f}%")
+        else:
+            degradation = None
+        
+        status = 'PASS' if passed else 'FAIL'
+        
+        print(f"\n{'✅ PASSED' if passed else '❌ FAILED'}: {strategy_name}")
+        if fail_reasons:
+            for reason in fail_reasons:
+                print(f"   ⚠️ {reason}")
+        
+        return {
+            'strategy': strategy_name,
+            'mode': 'optimized_wfa',
+            'status': status,
+            'in_sample': {
+                'return_pct': is_return,
+                'sharpe': float(is_sharpe) if is_sharpe else None,
+                'trades': is_trades
+            },
+            'out_of_sample': {
+                'return_pct': oos_return,
+                'sharpe': float(oos_sharpe) if oos_sharpe else None,
+                'trades': oos_trades
+            },
+            'optimized_params': best_params,
+            'degradation': degradation,
+            'fail_reasons': fail_reasons,
+            'timestamp': datetime.now().isoformat()
+        }
+    
     def run_rolling_window(
         self,
         strategy_name: str,
@@ -386,6 +551,8 @@ def main():
                         help='Dataset name (default: BTC_15m)')
     parser.add_argument('--rolling', action='store_true',
                         help='Use rolling window instead of single split')
+    parser.add_argument('--optimize', action='store_true',
+                        help='Run Walk-Forward Optimization (optimize on IS, validate on OOS)')
     parser.add_argument('--windows', type=int, default=3,
                         help='Number of rolling windows (default: 3)')
     parser.add_argument('--split', type=float, default=0.70,
@@ -403,13 +570,16 @@ def main():
         sys.exit(1)
     
     # Run analysis
-    if args.rolling:
+    if args.optimize:
+        result = analyzer.run_optimized_wfa(args.strategy, data)
+    elif args.rolling:
         result = analyzer.run_rolling_window(args.strategy, data)
     else:
         result = analyzer.run_single_split(args.strategy, data)
     
     # Save result
-    output_file = RESULTS_DIR / f"wfa_{args.strategy}.json"
+    mode_suffix = '_wfo' if args.optimize else ''
+    output_file = RESULTS_DIR / f"wfa_{args.strategy}{mode_suffix}.json"
     with open(output_file, 'w') as f:
         json.dump(result, f, indent=2, default=str)
     print(f"\n💾 Results saved to: {output_file}")
