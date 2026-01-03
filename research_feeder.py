@@ -139,6 +139,27 @@ def preprocess_data(df, **params):
 
 **Reference implementation:** See `strategies/vumanchu_cipher_b.py` for a working example.
 
+### 📋 Strategy Development Guidelines
+
+**CRITICAL:** Your implementation MUST follow the guidelines in `.agent/rules/strategy_development.md`. Key requirements:
+
+1. **ATR-Based Risk Management:**
+   - Stop loss: `entry ± (2 * ATR)`
+   - Take profit: `entry ± (3+ * ATR)`
+
+2. **Multi-Timeframe Filter:**
+   - Require higher TF trend confirmation (4H minimum)
+
+3. **Volume Confirmation:**
+   - Require volume > average for entries
+
+4. **No Hard-Coded Values:**
+   - ❌ Fixed time windows (e.g., 10-11 AM)
+   - ❌ Fixed price targets (e.g., +5 points)
+   - ✅ Adaptive based on ATR/volatility
+
+**Validation:** All strategies must pass Walk-Forward Analysis. Failure to follow guidelines = failed WFA.
+
 3. **Other Indicators:** For standard indicators, use `talib` or `pandas_ta` (NOT backtesting.py's built-in indicators).
 4. **Template:** Follow existing strategies in the `strategies/` folder
 
