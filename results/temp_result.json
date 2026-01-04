@@ -1,0 +1,8 @@
+{
+  "strategy_name": "bitcoin_monthly_pivot_moon_cycle",
+  "return": -4.7037540310122425,
+  "sharpe": -0.42234494893838165,
+  "max_drawdown": -11.935586667116194,
+  "win_rate": 33.33333333333333,
+  "total_trades": 15
+}
