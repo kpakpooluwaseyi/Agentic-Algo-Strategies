@@ -1,0 +1,9 @@
+{
+    "git": {
+        "autoCommit": true,
+        "targetBranch": "dev",
+        "protectedBranches": [
+            "main"
+        ]
+    }
+}
