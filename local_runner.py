@@ -16,6 +16,9 @@ from typing import Dict, List, Optional
 import pandas as pd
 import shutil
 
+# Import WFA for red team validation
+from walk_forward import WalkForwardAnalyzer
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -29,18 +32,27 @@ logger = logging.getLogger(__name__)
 
 # Constants
 STRATEGIES_DIR = Path('strategies')
+DATA_DIR = Path('data')
 RESULTS_DIR = Path('results')
 PLOTS_DIR = RESULTS_DIR / 'plots'
 LEADERBOARD_FILE = RESULTS_DIR / 'leaderboard.csv'
 TEMP_RESULT_FILE = RESULTS_DIR / 'temp_result.json'
+DATASETS_FILE = DATA_DIR / 'datasets.json'
 POLL_INTERVAL = 60  # seconds
 STRATEGY_TIMEOUT = 300  # 5 minutes max execution
+WFA_TIMEOUT = 180  # 3 minutes for WFA validation
 
 
 class LocalRunner:
     def __init__(self):
         """Initialize the local runner"""
+        # Suppress backtesting margin warnings
+        import warnings
+        warnings.filterwarnings("ignore", message="Broker canceled the relative-sized order")
+        
         self.setup_directories()
+        self.datasets = self.load_datasets()
+        self.wfa_analyzer = WalkForwardAnalyzer(in_sample_ratio=0.70)
         self.processed_strategies = self.load_processed_strategies()
         self.initialize_leaderboard()
         
@@ -51,6 +63,22 @@ class LocalRunner:
         PLOTS_DIR.mkdir(exist_ok=True)
         Path('logs').mkdir(exist_ok=True)
         logger.info("Directories initialized")
+    
+    def load_datasets(self) -> List[Dict]:
+        """Load all datasets from registry"""
+        if not DATASETS_FILE.exists():
+            logger.warning(f"Datasets file not found: {DATASETS_FILE}")
+            return []
+        
+        try:
+            with open(DATASETS_FILE, 'r') as f:
+                registry = json.load(f)
+            datasets = registry.get('datasets', [])
+            logger.info(f"Loaded {len(datasets)} datasets from registry")
+            return datasets
+        except Exception as e:
+            logger.error(f"Error loading datasets: {e}")
+            return []
         
     def load_processed_strategies(self) -> set:
         """Load set of already processed strategies"""
@@ -75,15 +103,22 @@ class LocalRunner:
             df = pd.DataFrame(columns=[
                 'timestamp',
                 'strategy_name',
+                'dataset_name',
                 'return_pct',
                 'sharpe_ratio',
                 'max_drawdown_pct',
                 'win_rate_pct',
                 'total_trades',
-                'status'
+                'status',
+                'wfa_status',
+                'wfa_oos_return_pct',
+                'wfa_degradation_pct',
+                'wfo_status',
+                'wfo_oos_return_pct',
+                'wfo_degradation_pct'
             ])
             df.to_csv(LEADERBOARD_FILE, index=False)
-            logger.info("Initialized leaderboard.csv")
+            logger.info("Initialized leaderboard.csv with WFA columns")
     
     def backup_leaderboard(self):
         """Create a timestamped backup of the leaderboard"""
@@ -218,27 +253,100 @@ class LocalRunner:
                 'status': 'EXCEPTION',
                 'error': str(e)
             }
-            
-    def harvest_results(self, results: Dict):
-        """Add results to leaderboard"""
+    
+    def run_wfa_validation(self, strategy_name: str, dataset_name: str) -> Dict:
+        """
+        Run Walk-Forward Analysis (70/30 split) for a strategy on a dataset.
+        Returns WFA result dict with status, OOS return, and degradation.
+        """
+        logger.info(f"🔬 Running WFA for {strategy_name} on {dataset_name}")
+        
         try:
-            # Prepare row
+            # Load dataset
+            data = self.wfa_analyzer.load_data(dataset_name)
+            if data is None or len(data) < 100:
+                logger.warning(f"Dataset {dataset_name} too small or not found for WFA")
+                return {'status': 'SKIPPED', 'reason': 'Dataset too small or not found'}
+            
+            # Run single split WFA (70/30)
+            result = self.wfa_analyzer.run_single_split(strategy_name, data)
+            
+            # Extract key metrics
+            wfa_result = {
+                'status': result.get('status', 'ERROR'),
+                'oos_return_pct': result.get('out_of_sample', {}).get('return_pct'),
+                'degradation_pct': result.get('degradation'),
+                'fail_reasons': result.get('fail_reasons', [])
+            }
+            
+            status_emoji = '✅' if wfa_result['status'] == 'PASS' else '❌'
+            logger.info(f"  {status_emoji} WFA {wfa_result['status']}: OOS return {wfa_result.get('oos_return_pct', 'N/A')}%")
+            
+            return wfa_result
+            
+        except Exception as e:
+            logger.error(f"WFA validation error for {strategy_name}: {e}")
+            return {'status': 'ERROR', 'error': str(e)}
+    
+    def run_wfo_validation(self, strategy_name: str, dataset_name: str) -> Dict:
+        """
+        Run Walk-Forward Optimization (optimize on IS, validate on OOS).
+        This is the more rigorous test that prevents overfitting.
+        """
+        logger.info(f"🔧 Running WFO for {strategy_name} on {dataset_name}")
+        
+        try:
+            data = self.wfa_analyzer.load_data(dataset_name)
+            if data is None or len(data) < 500:
+                logger.warning(f"Dataset {dataset_name} too small for WFO (need 500+ rows)")
+                return {'status': 'SKIPPED', 'reason': 'Dataset too small'}
+            
+            # Run optimized WFA
+            result = self.wfa_analyzer.run_optimized_wfa(strategy_name, data)
+            
+            wfo_result = {
+                'status': result.get('status', 'ERROR'),
+                'oos_return_pct': result.get('out_of_sample', {}).get('return_pct'),
+                'degradation_pct': result.get('degradation'),
+                'fail_reasons': result.get('fail_reasons', [])
+            }
+            
+            status_emoji = '🔧' if wfo_result['status'] == 'PASS' else '🔨'
+            logger.info(f"  {status_emoji} WFO {wfo_result['status']}: OOS return {wfo_result.get('oos_return_pct', 'N/A')}%")
+            
+            return wfo_result
+            
+        except Exception as e:
+            logger.error(f"WFO validation error for {strategy_name}: {e}")
+            return {'status': 'ERROR', 'error': str(e)}
+            
+    def harvest_results(self, results: Dict, dataset_name: str = 'unknown'):
+        """Add results to leaderboard including WFA metrics"""
+        try:
+            # Prepare row with WFA fields
             row = {
                 'timestamp': datetime.now().isoformat(),
-                'strategy_name': results.get('strategy_name', 'unknown'),
+                'strategy_name': results.get('strategy_name', dataset_name if dataset_name != 'unknown' else 'unknown_strategy'),
+                'dataset_name': dataset_name,
                 'return_pct': results.get('return', None),
                 'sharpe_ratio': results.get('sharpe', None),
                 'max_drawdown_pct': results.get('max_drawdown', None),
                 'win_rate_pct': results.get('win_rate', None),
                 'total_trades': results.get('total_trades', None),
-                'status': results.get('status', 'UNKNOWN')
+                'status': results.get('status', 'UNKNOWN'),
+                'wfa_status': results.get('wfa_status', 'SKIPPED'),
+                'wfa_oos_return_pct': results.get('wfa_oos_return_pct'),
+                'wfa_degradation_pct': results.get('wfa_degradation_pct'),
+                'wfo_status': results.get('wfo_status', 'SKIPPED'),
+                'wfo_oos_return_pct': results.get('wfo_oos_return_pct'),
+                'wfo_degradation_pct': results.get('wfo_degradation_pct')
             }
             
             # Append to leaderboard
             df = pd.DataFrame([row])
             df.to_csv(LEADERBOARD_FILE, mode='a', header=False, index=False)
             
-            logger.info(f"Added {results['strategy_name']} to leaderboard")
+            logger.info(f"Added {results['strategy_name']} ({dataset_name}) to leaderboard")
             
         except Exception as e:
             logger.error(f"Error harvesting results: {e}")
@@ -267,8 +375,9 @@ class LocalRunner:
             logger.error(f"Error moving plot for {strategy_name}: {e}")
             
     def run_loop(self):
-        """Main execution loop"""
-        logger.info("Local Runner started")
+        """Main execution loop - runs strategies on ALL datasets with WFA"""
+        logger.info("🌙 Local Runner started (Multi-Dataset + WFA Mode)")
+        logger.info(f"📊 Loaded {len(self.datasets)} datasets for testing")
         
         while True:
             try:
@@ -278,26 +387,55 @@ class LocalRunner:
                 # Step 2: Detect new strategies
                 new_strategies = self.detect_new_strategies()
                 
-                # Step 3: Execute each new strategy
+                # Step 3: For each new strategy, run on ALL datasets
                 for strategy_file in new_strategies:
                     strategy_name = strategy_file.stem
+                    logger.info(f"\n{'='*60}")
+                    logger.info(f"📈 Processing strategy: {strategy_name}")
+                    logger.info(f"{'='*60}")
                     
-                    # Execute
+                    # Execute initial backtest (default behavior)
                     results = self.execute_strategy(strategy_file)
                     
-                    if results:
-                        # Harvest results
-                        self.harvest_results(results)
-                        
-                        # Move plot if successful
-                        if results.get('status') == 'SUCCESS':
-                            self.move_plot(strategy_name)
-                            
-                        # Mark as processed
+                    if not results:
+                        logger.warning(f"No results for {strategy_name}, skipping")
                         self.processed_strategies.add(strategy_name)
+                        continue
+                    
+                    # Move plot if backtest successful
+                    if results.get('status') == 'SUCCESS':
+                        self.move_plot(strategy_name)
+                    
+                    # Step 4: Run WFA on ALL datasets
+                    for dataset in self.datasets:
+                        dataset_name = dataset['name']
+                        logger.info(f"\n📊 Testing on dataset: {dataset_name}")
+                        
+                        # Run WFA validation for this dataset
+                        wfa_result = self.run_wfa_validation(strategy_name, dataset_name)
+                        
+                        # Run WFO validation for this dataset (more rigorous)
+                        wfo_result = self.run_wfo_validation(strategy_name, dataset_name)
+                        
+                        # Merge validation results into strategy results
+                        dataset_results = results.copy()
+                        dataset_results['wfa_status'] = wfa_result.get('status', 'SKIPPED')
+                        dataset_results['wfa_oos_return_pct'] = wfa_result.get('oos_return_pct')
+                        dataset_results['wfa_degradation_pct'] = wfa_result.get('degradation_pct')
+                        
+                        dataset_results['wfo_status'] = wfo_result.get('status', 'SKIPPED')
+                        dataset_results['wfo_oos_return_pct'] = wfo_result.get('oos_return_pct')
+                        dataset_results['wfo_degradation_pct'] = wfo_result.get('degradation_pct')
+                        
+                        # Harvest results for this strategy-dataset pair
+                        self.harvest_results(dataset_results, dataset_name)
+                    
+                    # Mark strategy as processed
+                    self.processed_strategies.add(strategy_name)
+                    logger.info(f"✅ Completed all datasets for {strategy_name}")
                         
                 if new_strategies:
-                    logger.info(f"Processed {len(new_strategies)} new strategies")
+                    logger.info(f"\n🎉 Processed {len(new_strategies)} strategies x {len(self.datasets)} datasets")
                     # Backup leaderboard after processing
                     self.backup_leaderboard()
                     
@@ -309,9 +447,46 @@ class LocalRunner:
 
 
 if __name__ == '__main__':
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='Local Runner - Moon Dev Trading Factory')
+    parser.add_argument('--reprocess-all', action='store_true',
+                        help='Force re-run ALL strategies on all datasets (ignore processed set)')
+    parser.add_argument('--single-run', action='store_true',
+                        help='Run once and exit (no polling loop)')
+    args = parser.parse_args()
+    
     try:
         runner = LocalRunner()
-        runner.run_loop()
+        
+        if args.reprocess_all:
+            logger.info("🔄 REPROCESS-ALL mode: Ignoring processed strategies set")
+            runner.processed_strategies = set()  # Clear to force re-run
+        
+        if args.single_run:
+            logger.info("🔂 SINGLE-RUN mode: Will exit after one cycle")
+            # Run one iteration manually
+            runner.git_pull()
+            new_strategies = runner.detect_new_strategies()
+            for strategy_file in new_strategies:
+                strategy_name = strategy_file.stem
+                logger.info(f"\\n{'='*60}")
+                logger.info(f"📈 Processing strategy: {strategy_name}")
+                results = runner.execute_strategy(strategy_file)
+                if results and results.get('status') == 'SUCCESS':
+                    runner.move_plot(strategy_name)
+                    for dataset in runner.datasets:
+                        wfa_result = runner.run_wfa_validation(strategy_name, dataset['name'])
+                        dataset_results = results.copy()
+                        dataset_results['wfa_status'] = wfa_result.get('status', 'SKIPPED')
+                        dataset_results['wfa_oos_return_pct'] = wfa_result.get('oos_return_pct')
+                        dataset_results['wfa_degradation_pct'] = wfa_result.get('degradation_pct')
+                        runner.harvest_results(dataset_results, dataset['name'])
+                runner.processed_strategies.add(strategy_name)
+            logger.info(f"✅ Processed {len(new_strategies)} strategies")
+        else:
+            runner.run_loop()
+            
     except KeyboardInterrupt:
         logger.info("Local Runner stopped by user")
     except Exception as e:
