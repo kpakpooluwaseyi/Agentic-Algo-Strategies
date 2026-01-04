@@ -96,7 +96,7 @@ CONTENT TO ANALYZE:
 {content}
 
 ---
-Output each strategy as a separate section. If the content refers to Market Cipher, Cipher B, or VuManchu, ensure you explicitly note that the implementation should use the `src.indicators.vumanchu` library. Separate multiple strategies with "---".
+Output each strategy as a separate section. If multiple strategies are found, separate them with "---".
 If no clear trading strategy is found, output "NO_STRATEGY_FOUND" with an explanation.
 """
 
@@ -117,50 +117,7 @@ Please implement this strategy using the `backtesting.py` framework with the fol
 
 1. **File Location:** `strategies/{filename}.py`
 2. **Data Path:** Use `data/BTC-USD-15m.csv` for backtesting
-
-### ⚠️ IMPORTANT: VuManchu / Market Cipher / Cipher B Indicators
-
-This repository has a **pre-built VuManchu indicator library**. You MUST use it instead of recreating the indicators:
-
-```python
-# In your preprocess_data function:
-from src.indicators.vumanchu import cipher_b, wavetrend, rsimfi
-
-def preprocess_data(df, **params):
-    df = cipher_b(df)  # Adds: wt1, wt2, buy_signal, sell_signal, rsimfi, stoch_rsi_k, stoch_rsi_d
-    return df
-```
-
-**Available functions in `src.indicators.vumanchu`:**
-- `cipher_b(df)` - Complete Cipher B suite (WaveTrend + MFI + StochRSI)
-- `wavetrend(df)` - WaveTrend oscillator only (wt1, wt2, buy_signal, sell_signal)
-- `rsimfi(df)` - RSI + Money Flow Index composite
-- `stoch_rsi(df)` - Stochastic RSI
-
-**Reference implementation:** See `strategies/vumanchu_cipher_b.py` for a working example.
-
-### 📋 Strategy Development Guidelines
-
-**CRITICAL:** Your implementation MUST follow the guidelines in `.agent/rules/strategy_development.md`. Key requirements:
-
-1. **ATR-Based Risk Management:**
-   - Stop loss: `entry ± (2 * ATR)`
-   - Take profit: `entry ± (3+ * ATR)`
-
-2. **Multi-Timeframe Filter:**
-   - Require higher TF trend confirmation (4H minimum)
-
-3. **Volume Confirmation:**
-   - Require volume > average for entries
-
-4. **No Hard-Coded Values:**
-   - ❌ Fixed time windows (e.g., 10-11 AM)
-   - ❌ Fixed price targets (e.g., +5 points)
-   - ✅ Adaptive based on ATR/volatility
-
-**Validation:** All strategies must pass Walk-Forward Analysis. Failure to follow guidelines = failed WFA.
-
-3. **Other Indicators:** For standard indicators, use `talib` or `pandas_ta` (NOT backtesting.py's built-in indicators).
+3. **Indicators:** Use `talib` or `pandas_ta` (NOT backtesting.py's built-in indicators)
 4. **Template:** Follow existing strategies in the `strategies/` folder
 
 ### Required Components:
@@ -301,10 +258,9 @@ def process_file(filepath: Path) -> Optional[str]:
 def extract_strategies(model, content: str) -> List[str]:
     """Use Gemini to extract trading strategies from content"""
     try:
-        # Increased limit to 1M to leverage Flash's context window
-        prompt = EXTRACTION_PROMPT.format(content=content[:1000000])  
+        prompt = EXTRACTION_PROMPT.format(content=content[:100000])  # Limit content size
         
-        logger.info(f"🤖 Sending {len(content[:1000000])} chars to Gemini for analysis...")
+        logger.info(f"🤖 Sending {len(content)} chars to Gemini for analysis...")
         response = model.generate_content(prompt)
         
         if not response or not response.text:
@@ -423,25 +379,11 @@ def main(dry_run: bool = False):
             continue
         
         # Extract strategies using Gemini
-        # If it's a YouTube list, process each video individually
-        if "\n\n---\n\n" in content and filepath.name == "Youtube Trading Research.txt":
-            video_sections = content.split("\n\n---\n\n")
-            logger.info(f"🎞️ Processing {len(video_sections)} videos individually...")
-            strategies = []
-            for section in video_sections:
-                strategies.extend(extract_strategies(model, section))
-        else:
-            strategies = extract_strategies(model, content)
+        strategies = extract_strategies(model, content)
         
         # Create GitHub issues for each strategy
         for i, strategy in enumerate(strategies):
-            # Try to extract the specific video URL/title if present for the source
-            video_match = re.search(r'\[Video: (.*?)\]', strategy)
-            if video_match:
-                source = video_match.group(1)
-            else:
-                source = f"{filepath.name}" + (f" (strategy {i+1})" if len(strategies) > 1 else "")
-                
+            source = f"{filepath.name}" + (f" (strategy {i+1})" if len(strategies) > 1 else "")
             if create_github_issue(repo, strategy, source, dry_run):
                 strategies_created += 1
         
