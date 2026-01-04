@@ -3,7 +3,7 @@
 🌙 Moon Dev's PR Gatekeeper
 Audits Pull Requests from Jules for safety before merging.
 
-Uses OpenRouter free tier (GPT-OSS-120B or Qwen 3) for code auditing.
+Uses Gemini 3.0 Flash for high-fidelity code auditing.
 
 Safety checks:
 - Malware patterns (subprocess, os.system, eval, exec)
@@ -29,7 +29,7 @@ from typing import Optional, List, Dict, Tuple
 
 from dotenv import load_dotenv
 from github import Github
-import requests
+import google.generativeai as genai
 
 # Load environment variables
 load_dotenv()
@@ -38,16 +38,10 @@ load_dotenv()
 LOGS_DIR = Path("logs")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "kpakpooluwaseyi/Agentic-Algo-Strategies")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# OpenRouter configuration
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
-# Free tier models - try these in order
-OPENROUTER_MODELS = [
-    "qwen/qwen3-235b-a22b:free",  # Qwen 3 free tier
-    "google/gemma-3-27b-it:free",  # Gemma 3 free
-    "meta-llama/llama-3.3-70b-instruct:free",  # Llama 3.3 free
-]
+# Gemini configuration
+GEMINI_MODEL = "models/gemini-3-flash-preview"
 
 # Setup logging
 LOGS_DIR.mkdir(exist_ok=True)
@@ -129,53 +123,34 @@ def init_github():
     return gh, repo
 
 
-def call_openrouter(prompt: str) -> Optional[str]:
-    """Call OpenRouter API with the given prompt"""
-    if not OPENROUTER_API_KEY:
-        raise ValueError("OPENROUTER_API_KEY not found in environment!")
+def call_gemini(prompt: str) -> Optional[str]:
+    """Call Gemini API with the given prompt"""
+    if not GEMINI_API_KEY:
+        raise ValueError("GEMINI_API_KEY not found in environment!")
     
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://github.com/moon-dev-trading",
-        "X-Title": "Moon Dev PR Gatekeeper"
-    }
-    
-    for model in OPENROUTER_MODELS:
-        try:
-            logger.info(f"🤖 Trying model: {model}")
-            
-            payload = {
-                "model": model,
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
-                "max_tokens": 1000,
-                "temperature": 0.1  # Low temperature for consistent judgments
-            }
-            
-            response = requests.post(
-                OPENROUTER_BASE_URL,
-                headers=headers,
-                json=payload,
-                timeout=60
+    try:
+        logger.info(f"🤖 Calling Gemini model: {GEMINI_MODEL}")
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel(GEMINI_MODEL)
+        
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.1,  # Low temperature for consistent judgments
+                max_output_tokens=1000,
             )
-            
-            if response.status_code == 200:
-                result = response.json()
-                content = result['choices'][0]['message']['content']
-                logger.info(f"✅ Got response from {model}")
-                return content
-            else:
-                logger.warning(f"⚠️ Model {model} returned {response.status_code}: {response.text[:200]}")
-                continue
+        )
+        
+        if response and response.text:
+            logger.info(f"✅ Got response from {GEMINI_MODEL}")
+            return response.text
+        else:
+            logger.error(f"❌ Gemini returned empty response")
+            return None
                 
-        except Exception as e:
-            logger.warning(f"⚠️ Model {model} failed: {e}")
-            continue
-    
-    logger.error("❌ All OpenRouter models failed")
-    return None
+    except Exception as e:
+        logger.error(f"❌ Gemini call failed: {e}")
+        return None
 
 
 def get_jules_prs(repo) -> List:
@@ -210,8 +185,9 @@ def get_jules_prs(repo) -> List:
 
 
 def get_pr_diff(pr) -> Optional[str]:
-    """Get the diff content for a PR"""
+    """Get the diff content of a PR"""
     try:
+        # Get files changed in the PR
         files = pr.get_files()
         diff_content = []
         
@@ -233,7 +209,7 @@ def get_pr_diff(pr) -> Optional[str]:
 
 
 def parse_verdict(response: str) -> Tuple[str, str]:
-    """Parse the verdict from OpenRouter response"""
+    """Parse the verdict from LLM response"""
     response = response.strip()
     
     # Look for VERDICT line
@@ -275,12 +251,12 @@ def audit_pr(pr) -> Tuple[str, str]:
             logger.warning(f"🚨 Quick-check found: {description}")
             # Still send to LLM for context-aware analysis
     
-    # Send to OpenRouter for detailed analysis
+    # Send to Gemini for detailed analysis
     prompt = AUDIT_PROMPT.format(diff_content=diff[:50000])  # Limit size
-    response = call_openrouter(prompt)
+    response = call_gemini(prompt)
     
     if not response:
-        return "REJECT", "OpenRouter API unavailable - manual review required"
+        return "REJECT", "Gemini API unavailable - manual review required"
     
     verdict, reason = parse_verdict(response)
     logger.info(f"📋 Verdict: {verdict}")
