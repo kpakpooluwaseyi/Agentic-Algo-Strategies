@@ -55,37 +55,35 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Safety audit prompt - IMPORTANT: Be lenient for normal trading strategy patterns!
-AUDIT_PROMPT = """You are a practical code reviewer for auto-generated trading strategy code.
+# Safety audit prompt
+AUDIT_PROMPT = """You are a security-focused code reviewer auditing auto-generated trading strategy code.
 
-**CONTEXT**: These are backtesting strategies for algorithmic trading research. They are run in isolated environments, NOT in production. Be practical, not paranoid.
+Analyze the following code diff and check for:
 
-## APPROVE these NORMAL patterns (do NOT reject):
-- ✅ Reading CSV/data files from `data/` directory (standard practice)
-- ✅ Generating synthetic data for backtesting (numpy.random, monte carlo)
-- ✅ Using sklearn, pandas, numpy for ML models and analysis
-- ✅ Using backtesting.py, backtrader frameworks
-- ✅ Using pandas_ta, talib for indicators
-- ✅ Writing results to `results/` directory
-- ✅ Loading data with pd.read_csv()
-- ✅ Plotting with matplotlib
-- ✅ JSON serialization of results
-- ✅ Random forest, linear regression, any ML models
+1. **CRITICAL SECURITY ISSUES** (REJECT immediately):
+   - Malware patterns (backdoors, data exfiltration)
+   - Network requests to unknown servers
+   - File system access outside project directory
+   - Execution of arbitrary code (eval, exec, compile)
+   - Subprocess calls for non-trading purposes
+   - Credential theft attempts
 
-## REJECT only ACTUAL security threats:
-- ❌ Network requests to unknown external servers (NOT data APIs)
-- ❌ eval(), exec(), compile() with user input
-- ❌ subprocess.Popen with shell=True and untrusted input
-- ❌ Accessing credentials, API keys, .env contents to exfiltrate
-- ❌ Writing files outside project directory (path traversal)
-- ❌ Deliberate infinite loops (while True without break)
-- ❌ socket connections to external servers
+2. **DANGEROUS PATTERNS** (REJECT):
+   - Infinite loops without proper exit conditions
+   - Memory exhaustion (unbounded lists/dicts)
+   - Disk filling (unbounded file writes)
+   - API abuse (rapid-fire requests without limits)
 
-## IMPORTANT GUIDELINES:
-- Reading from `data/BTC-USD-15m.csv` is NORMAL - APPROVE
-- Using sklearn.ensemble.RandomForestRegressor is NORMAL - APPROVE  
-- Generating synthetic test data is NORMAL - APPROVE
-- These strategies will be tested locally, not deployed to production
+3. **SUSPICIOUS BUT ACCEPTABLE** (WARN but APPROVE):
+   - Using os.path for file handling (normal)
+   - HTTP requests to known data APIs (Binance, CoinGecko, etc.)
+   - subprocess for running backtests
+
+4. **EXPECTED CODE** (APPROVE):
+   - Strategy class definitions
+   - Indicator calculations (talib, pandas_ta)
+   - Backtest setup and execution
+   - Results logging and plotting
 
 ---
 CODE DIFF TO AUDIT:
@@ -95,20 +93,20 @@ CODE DIFF TO AUDIT:
 ---
 Respond with EXACTLY one of these formats:
 
-If SAFE (the code looks like normal trading strategy code):
+If SAFE:
 ```
 VERDICT: APPROVE
-REASON: [Brief explanation]
+REASON: [Brief explanation of why the code is safe]
 ```
 
-If UNSAFE (you found an actual security threat from the REJECT list above):
+If UNSAFE:
 ```
 VERDICT: REJECT
-REASON: [Specific security threat found - must be from REJECT list]
-CODE_LOCATION: [Exact line or section]
+REASON: [Specific security concern found]
+CODE_LOCATION: [Line or section with the issue]
 ```
 
-**When in doubt, APPROVE.** These are research strategies, not production code.
+If unclear, err on the side of caution and REJECT.
 """
 
 
@@ -360,27 +358,11 @@ def main(dry_run: bool = False, auto_merge: bool = False):
         
         # Check if already audited (has gatekeeper comment)
         comments = list(pr.get_issue_comments())
-        gk_comments = [c for c in comments if "PR Gatekeeper" in c.body]
+        already_audited = any("PR Gatekeeper" in c.body for c in comments)
         
-        if gk_comments:
-            # Check if last audit was REJECTED and there are new commits since
-            last_gk = gk_comments[-1]
-            was_rejected = "REJECTED" in last_gk.body
-            
-            if was_rejected:
-                # Check for new commits after the rejection
-                commits = list(pr.get_commits())
-                last_commit_date = commits[-1].commit.committer.date
-                
-                if last_commit_date > last_gk.created_at:
-                    logger.info(f"🔄 PR #{pr.number} has new commits after rejection - re-auditing")
-                else:
-                    logger.info(f"⏭️ PR #{pr.number} rejected, no new commits, skipping")
-                    continue
-            else:
-                # Was approved, skip
-                logger.info(f"⏭️ PR #{pr.number} already approved, skipping")
-                continue
+        if already_audited:
+            logger.info(f"⏭️ PR #{pr.number} already audited, skipping")
+            continue
         
         # Audit the PR
         verdict, reason = audit_pr(pr)
