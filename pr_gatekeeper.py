@@ -72,7 +72,7 @@ AUDIT_PROMPT = """You are a practical code reviewer for auto-generated trading s
 - ✅ JSON serialization of results
 - ✅ Random forest, linear regression, any ML models
 
-## REJECT only ACTUAL security threats:
+## REJECT only ACTUAL security threats or NON-COMPLIANT code:
 - ❌ Network requests to unknown external servers (NOT data APIs)
 - ❌ eval(), exec(), compile() with user input
 - ❌ subprocess.Popen with shell=True and untrusted input
@@ -80,6 +80,7 @@ AUDIT_PROMPT = """You are a practical code reviewer for auto-generated trading s
 - ❌ Writing files outside project directory (path traversal)
 - ❌ Deliberate infinite loops (while True without break)
 - ❌ socket connections to external servers
+- ❌ **NON-COMPLIANT**: Code MUST inherit from `MoonDevStrategy` (e.g., `class MyStrategy(MoonDevStrategy):`). If it uses the old loose script format, REJECT it.
 
 ## IMPORTANT GUIDELINES:
 - Reading from `data/BTC-USD-15m.csv` is NORMAL - APPROVE

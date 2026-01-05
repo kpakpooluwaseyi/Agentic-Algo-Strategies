@@ -113,14 +113,27 @@ ISSUE_TEMPLATE = """## 🤖 Auto-Generated Strategy Request
 
 ## Implementation Instructions
 
-Please implement this strategy using the `backtesting.py` framework with the following requirements:
+Please implement this strategy as a **MoonDevStrategy plugin** with the following requirements:
 
 1. **File Location:** `strategies/{filename}.py`
-2. **Data Path:** Use `data/BTC-USD-15m.csv` for backtesting
+2. **Inheritance:** Your class MUST inherit from `MoonDevStrategy`:
+   ```python
+   from src.strategies.base import MoonDevStrategy
+   
+   class MyStrategy(MoonDevStrategy):
+       def init(self):
+           # Initialize indicators
+           pass
+           
+       def next(self):
+           # Trading logic
+           pass
+   ```
+3. **Data Path:** Use `data/BTC-USD-15m.csv` for backtesting.
 
 ### ⚠️ IMPORTANT: VuManchu / Market Cipher / Cipher B Indicators
 
-This repository has a **pre-built VuManchu indicator library**. You MUST use it instead of recreating the indicators:
+This repository has a **pre-built VuManchu indicator library**. You MUST use it:
 
 ```python
 # In your preprocess_data function:

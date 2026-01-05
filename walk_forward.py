@@ -84,7 +84,7 @@ class WalkForwardAnalyzer:
             for node in ast.walk(tree):
                 if isinstance(node, ast.ClassDef):
                     for base in node.bases:
-                        if isinstance(base, ast.Name) and base.id == 'Strategy':
+                        if isinstance(base, ast.Name) and base.id in ['Strategy', 'MoonDevStrategy']:
                             class_name = node.name
                             break
             
