@@ -182,7 +182,9 @@ class LocalRunner:
         
     def execute_strategy(self, strategy_file: Path) -> Optional[Dict]:
         """
-        Execute a strategy file as subprocess
+        Execute a strategy file using in-memory discovery and execution.
+        
+        This is faster than subprocess as it avoids spinning up new Python interpreters.
         
         Returns:
             Result dict or None if failed
@@ -191,64 +193,41 @@ class LocalRunner:
         logger.info(f"Executing strategy: {strategy_name}")
         
         try:
-            # Clean up temp result file
-            if TEMP_RESULT_FILE.exists():
-                TEMP_RESULT_FILE.unlink()
-                
-            # Execute strategy with timeout
-            result = subprocess.run(
-                [sys.executable, str(strategy_file)],
-                capture_output=True,
-                text=True,
-                timeout=STRATEGY_TIMEOUT,
-                cwd=Path.cwd()
+            # Use WFA Analyzer's discovery logic (supports both Strategy and MoonDevStrategy)
+            strategy_class, preprocess_func, error = self.wfa_analyzer.discover_strategy_class(strategy_name)
+            
+            if error:
+                logger.error(f"Failed to discover strategy {strategy_name}: {error}")
+                return {'strategy_name': strategy_name, 'status': 'ERROR', 'error': error}
+
+            # Load default dataset for initial screening
+            default_dataset = self.datasets[0]['name'] if self.datasets else 'BTC-USD-15m'
+            data = self.wfa_analyzer.load_data(default_dataset)
+            
+            if data.empty:
+                return {'strategy_name': strategy_name, 'status': 'ERROR', 'error': 'No data found'}
+
+            # Run backtest in-process using WFA's internal runner
+            results = self.wfa_analyzer._run_backtest(
+                strategy_class=strategy_class,
+                data=data,
+                label=f"{strategy_name}_screening",
+                preprocess_func=preprocess_func
             )
             
-            # Check for errors
-            if result.returncode != 0:
-                logger.error(f"Strategy {strategy_name} failed with error:\n{result.stderr}")
-                return {
-                    'strategy_name': strategy_name,
-                    'status': 'ERROR',
-                    'error': result.stderr[:500]
-                }
+            if results and results.get('status') == 'SUCCESS':
+                results['strategy_name'] = strategy_name
+                logger.info(f"Strategy {strategy_name} executed successfully")
+                logger.info(f"  Return: {results.get('return', 'N/A')}%")
+                logger.info(f"  Sharpe: {results.get('sharpe', 'N/A')}")
+                return results
+            else:
+                return {'strategy_name': strategy_name, 'status': 'ERROR', 'error': 'Backtest failed'}
                 
-            # Check if temp result was created
-            if not TEMP_RESULT_FILE.exists():
-                logger.warning(f"Strategy {strategy_name} did not create result file")
-                return {
-                    'strategy_name': strategy_name,
-                    'status': 'NO_OUTPUT'
-                }
-                
-            # Read results
-            with open(TEMP_RESULT_FILE, 'r') as f:
-                results = json.load(f)
-                
-            results['status'] = 'SUCCESS'
-            results['strategy_name'] = strategy_name
-            logger.info(f"Strategy {strategy_name} executed successfully")
-            logger.info(f"  Return: {results.get('return', 'N/A')}%")
-            logger.info(f"  Sharpe: {results.get('sharpe', 'N/A')}")
-            
-            return results
-            
-        except subprocess.TimeoutExpired:
-            logger.error(f"Strategy {strategy_name} timed out after {STRATEGY_TIMEOUT}s")
-            return {
-                'strategy_name': strategy_name,
-                'status': 'TIMEOUT'
-            }
-            
-        except json.JSONDecodeError as e:
-            logger.error(f"Failed to parse results for {strategy_name}: {e}")
-            return {
-                'strategy_name': strategy_name,
-                'status': 'INVALID_JSON'
-            }
-            
         except Exception as e:
             logger.error(f"Error executing {strategy_name}: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return {
                 'strategy_name': strategy_name,
                 'status': 'EXCEPTION',
