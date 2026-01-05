@@ -226,6 +226,7 @@ class LocalRunner:
                 results = json.load(f)
                 
             results['status'] = 'SUCCESS'
+            results['strategy_name'] = strategy_name
             logger.info(f"Strategy {strategy_name} executed successfully")
             logger.info(f"  Return: {results.get('return', 'N/A')}%")
             logger.info(f"  Sharpe: {results.get('sharpe', 'N/A')}")
@@ -346,7 +347,7 @@ class LocalRunner:
             df = pd.DataFrame([row])
             df.to_csv(LEADERBOARD_FILE, mode='a', header=False, index=False)
             
-            logger.info(f"Added {results['strategy_name']} ({dataset_name}) to leaderboard")
+            logger.info(f"Added {row['strategy_name']} ({dataset_name}) to leaderboard")
             
         except Exception as e:
             logger.error(f"Error harvesting results: {e}")
