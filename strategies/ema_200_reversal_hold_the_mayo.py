@@ -18,12 +18,11 @@ import talib
 from scipy.signal import find_peaks
 import sys
 import os
-import json
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.indicators.vumanchu import cipher_b
-from backtesting import Strategy, Backtest
+from backtesting import Strategy
 
 def preprocess_data(df: pd.DataFrame, **params) -> pd.DataFrame:
     """
@@ -51,6 +50,8 @@ def preprocess_data(df: pd.DataFrame, **params) -> pd.DataFrame:
     df['cipher_sell'] = (df['wt1'] < df['wt2']) & (df['wt1'] > 20)
 
     # --- M/W Pattern Detection (Mathematical Proxy) ---
+    # Use scipy to find significant swing highs (M-tops) and lows (W-bottoms)
+    # The 'distance' parameter is crucial for filtering out minor noise
     peak_indices, _ = find_peaks(df['High'], distance=params.get('peak_distance', 10))
     trough_indices, _ = find_peaks(-df['Low'], distance=params.get('peak_distance', 10))
 
@@ -62,14 +63,13 @@ def preprocess_data(df: pd.DataFrame, **params) -> pd.DataFrame:
     if len(trough_indices) > 0:
         df.iloc[trough_indices, df.columns.get_loc('is_trough')] = True
 
-    # Drop rows only where the primary 15m EMA is NaN to preserve as much data as possible
-    return df.dropna(subset=['ema_200'])
+    return df.dropna()
 
 class Ema200ReversalHoldTheMayo(Strategy):
     # --- Optimizable Parameters ---
     atr_sl_multiplier = 2.0
     atr_tp_multiplier = 3.5
-    ema_proximity_pct = 0.005
+    ema_proximity_pct = 0.005  # Price must be within 0.5% of the 200 EMA
     peak_distance = 10
 
     def init(self):
@@ -84,40 +84,59 @@ class Ema200ReversalHoldTheMayo(Strategy):
         self.is_trough = self.I(lambda: self.data.is_trough, name="is_trough")
 
     def next(self):
+        # --- Parameter Shortcuts ---
         price = self.data.Close[-1]
 
         # --- Mandatory Filters ---
+        # 1. Volume Confirmation
         if self.data.Volume[-1] < self.volume_ma[-1]:
             return
+
+        # 2. Check if already in a position
         if self.position:
             return
 
         # --- Long Entry (W-Pattern Bounce) ---
-        if self.htf_uptrend[-1] and self.is_trough[-1]:
-            is_near_ema = abs(self.data.Low[-1] - self.ema_200[-1]) / self.ema_200[-1] < self.ema_proximity_pct
-            if is_near_ema and self.cipher_buy[-1]:
-                sl = price - (self.atr[-1] * self.atr_sl_multiplier)
-                tp = price + (self.atr[-1] * self.atr_tp_multiplier)
-                self.buy(sl=sl, tp=tp)
+        # 1. HTF trend must be up
+        if self.htf_uptrend[-1]:
+            # 2. A trough (W-bottom) must be detected on the current bar
+            if self.is_trough[-1]:
+                # 3. The low of the trough candle must be close to the 200 EMA
+                is_near_ema = abs(self.data.Low[-1] - self.ema_200[-1]) / self.ema_200[-1] < self.ema_proximity_pct
+                if is_near_ema:
+                    # 4. Cipher B must confirm a buy signal
+                    if self.cipher_buy[-1]:
+                        sl = price - (self.atr[-1] * self.atr_sl_multiplier)
+                        tp = price + (self.atr[-1] * self.atr_tp_multiplier)
+                        self.buy(sl=sl, tp=tp)
 
         # --- Short Entry (M-Pattern Rejection) ---
-        if not self.htf_uptrend[-1] and self.is_peak[-1]:
-            is_near_ema = abs(self.data.High[-1] - self.ema_200[-1]) / self.ema_200[-1] < self.ema_proximity_pct
-            if is_near_ema and self.cipher_sell[-1]:
-                sl = price + (self.atr[-1] * self.atr_sl_multiplier)
-                tp = price - (self.atr[-1] * self.atr_tp_multiplier)
-                self.sell(sl=sl, tp=tp)
+        # 1. HTF trend must be down
+        if not self.htf_uptrend[-1]:
+            # 2. A peak (M-top) must be detected on the current bar
+            if self.is_peak[-1]:
+                # 3. The high of the peak candle must be close to the 200 EMA
+                is_near_ema = abs(self.data.High[-1] - self.ema_200[-1]) / self.ema_200[-1] < self.ema_proximity_pct
+                if is_near_ema:
+                    # 4. Cipher B must confirm a sell signal
+                    if self.cipher_sell[-1]:
+                        sl = price + (self.atr[-1] * self.atr_sl_multiplier)
+                        tp = price - (self.atr[-1] * self.atr_tp_multiplier)
+                        self.sell(sl=sl, tp=tp)
 
 if __name__ == '__main__':
+    from backtesting import Backtest
+    import json
+
     # --- Data Loading and Preparation ---
     try:
         df = pd.read_csv('data/BTC-USD-15m.csv', index_col=0, parse_dates=True)
-        df.columns = [c.strip().title() for c in df.columns] # Sanitize column names
     except FileNotFoundError:
-        print("Error: data/BTC-USD-15m.csv not found.")
+        print("Error: data/BTC-USD-15m.csv not found. Please ensure the data file is in the correct directory.")
         sys.exit(1)
 
     # --- Preprocessing ---
+    # Pass strategy-specific parameters to the preprocessing function
     data = preprocess_data(df, peak_distance=Ema200ReversalHoldTheMayo.peak_distance)
 
     # --- Backtesting ---
@@ -127,29 +146,19 @@ if __name__ == '__main__':
     print(stats)
 
     # --- Results and Output ---
+    # Ensure the results directory exists
     os.makedirs('results', exist_ok=True)
 
-    def sanitize_for_json(stats):
-        """Converts non-serializable types in the stats object to JSON-friendly formats."""
-        sanitized = dict(stats)
-        for key, value in sanitized.items():
-            if isinstance(value, pd.Timestamp):
-                sanitized[key] = value.isoformat()
-            elif isinstance(value, pd.Timedelta):
-                sanitized[key] = str(value)
-            elif isinstance(value, float) and pd.isna(value):
-                 sanitized[key] = None
-        # Remove complex objects that are not useful for JSON output
-        sanitized.pop('_strategy', None)
-        sanitized.pop('_equity_curve', None)
-        sanitized.pop('_trades', None)
-        return sanitized
-
-    stats_dict = sanitize_for_json(stats)
+    # Save statistics to a JSON file
+    stats_dict = dict(stats)
+    # The _strategy object is not JSON serializable, so we remove it.
+    if '_strategy' in stats_dict:
+        del stats_dict['_strategy']
 
     with open('results/temp_result.json', 'w') as f:
         json.dump(stats_dict, f, indent=4)
 
+    # Save the plot to an HTML file
     bt.plot(filename='results/ema_200_reversal_hold_the_mayo.html', open_browser=False)
 
     print("\nBacktest complete.")
