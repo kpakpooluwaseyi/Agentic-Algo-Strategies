@@ -1,113 +1,119 @@
+"""
+Strategy Template for Backtesting Pipeline
+==========================================
+
+Instructions:
+1. Rename this file to your_strategy_name.py (use underscores, lowercase)
+2. Rename the class to YourStrategyName (CamelCase)
+3. Implement your trading logic in next()
+4. Drop the file in strategies/ folder
+5. The local_runner will automatically pick it up and test it
+
+The pipeline will:
+- Run your strategy on 6 BTC timeframes (4h, 1h, 15m, 5m, 1m)
+- Perform Walk-Forward Analysis (WFA) with 30% out-of-sample data
+- Perform Walk-Forward Optimization (WFO) if WFA fails
+- Add results to the leaderboard
+"""
+
 import pandas as pd
 import pandas_ta as ta
-import numpy as np
-import json
-import os
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
+import json
+import os
 
-def PtaBollingerBands(close_series, length=20, std=2.0):
-    """
-    Wrapper for pandas_ta.bbands that returns a tuple of numpy arrays
-    as expected by backtesting.py's self.I().
-    """
-    bbands = ta.bbands(close=pd.Series(close_series), length=length, std=std)
-    # The library in this environment appears to append the std dev value twice.
-    lower_col = f'BBL_{length}_{std}_{std}'
-    middle_col = f'BBM_{length}_{std}_{std}'
-    upper_col = f'BBU_{length}_{std}_{std}'
-    return bbands[lower_col], bbands[middle_col], bbands[upper_col]
+def sanitize_stats(stats):
+    """Sanitizes the backtest stats object for JSON serialization."""
+    sanitized = {}
+    for key, value in stats.items():
+        if isinstance(value, (pd.Timestamp, pd.Timedelta)):
+            sanitized[key] = str(value)
+        elif isinstance(value, (int, float, bool, str, type(None))):
+            sanitized[key] = value
+        elif key in ['_strategy', '_equity_curve', '_trades']:
+            continue
+    return sanitized
 
-def generate_synthetic_data():
-    """Generates synthetic data for testing the strategy."""
-    print("Generating synthetic data...")
-    n_points = 2000
-    index = pd.to_datetime(pd.date_range('2023-01-01', periods=n_points, freq='15min'))
-    price = 100 + pd.Series(np.random.randn(n_points).cumsum() * 0.1)
-    price += np.sin(np.linspace(0, 200, n_points)) * 2
-    data = pd.DataFrame({
-        'Open': price, 'High': price * 1.005, 'Low': price * 0.995,
-        'Close': price, 'Volume': np.random.randint(100, 1000, n_points)
-    }, index=index)
-    return data
+def preprocess_data(df):
+    """Adds Bollinger Bands and ATR indicators to the DataFrame."""
+    df.ta.bbands(length=20, std=2, append=True)
+    df.ta.atr(length=14, append=True)
+    df.dropna(inplace=True)
+    return df
 
 class BollingerBandMeanReversion(Strategy):
     """
-    A mean-reversion strategy that uses Bollinger Bands.
-    - Enters long when the price crosses below the lower band.
-    - Enters short when the price crosses above the upper band.
-    - Exits when the price reverts to the middle band.
+    A mean-reversion strategy that enters trades when the price touches
+    the outer Bollinger Bands and uses ATR for risk management, as required
+    by MoonDev strategy guidelines.
+
+    Entry Conditions:
+    - Long: Price closes below the lower Bollinger Band.
+    - Short: Price closes above the upper Bollinger Band.
+
+    Exit Conditions:
+    - Stop Loss: 2 * ATR from the entry price.
+    - Take Profit: 3 * ATR from the entry price.
     """
-    bb_period = 20
-    bb_std_dev = 2.0
+    bbands_length = 20
+    bbands_std = 2.0
+    atr_period = 14
+    sl_multiplier = 2.0
+    tp_multiplier = 3.0
 
     def init(self):
-        self.lower_band, self.middle_band, self.upper_band = self.I(
-            PtaBollingerBands, self.data.Close, self.bb_period, self.bb_std_dev
-        )
+        # Indicators from pandas_ta are automatically available on self.data
+        # We just need to access them. self.I is used for plotting.
+        self.lower_band = self.I(lambda: self.data.df[f'BBL_{self.bbands_length}_{self.bbands_std}'])
+        self.upper_band = self.I(lambda: self.data.df[f'BBU_{self.bbands_length}_{self.bbands_std}'])
+        self.atr = self.I(lambda: self.data.df[f'ATRr_{self.atr_period}'])
 
     def next(self):
-        if self.position:
-            if self.position.is_long and self.data.Close[-1] >= self.middle_band[-1]:
-                self.position.close()
-            elif self.position.is_short and self.data.Close[-1] <= self.middle_band[-1]:
-                self.position.close()
-        else:
-            if crossover(self.lower_band, self.data.Close):
-                self.buy(size=1)
-            elif crossover(self.data.Close, self.upper_band):
-                self.sell(size=1)
+        price = self.data.Close[-1]
+        atr_value = self.atr[-1]
+
+        # Long entry condition
+        if not self.position and price < self.lower_band[-1]:
+            sl = price - self.sl_multiplier * atr_value
+            tp = price + self.tp_multiplier * atr_value
+            self.buy(sl=sl, tp=tp)
+
+        # Short entry condition
+        elif not self.position and price > self.upper_band[-1]:
+            sl = price + self.sl_multiplier * atr_value
+            tp = price - self.tp_multiplier * atr_value
+            self.sell(sl=sl, tp=tp)
 
 if __name__ == '__main__':
     data_path = 'data/BTC-USD-15m.csv'
-
-    if os.path.exists(data_path):
-        print(f"Loading data from: {data_path}")
-        try:
-            data = pd.read_csv(
-                data_path, index_col='datetime', parse_dates=True, header=0,
-                names=['datetime', 'Open', 'High', 'Low', 'Close', 'Volume', 'Unnamed'],
-                usecols=['datetime', 'Open', 'High', 'Low', 'Close', 'Volume']
-            )
-        except Exception as e:
-            print(f"Error loading CSV, falling back to synthetic data: {e}")
-            data = generate_synthetic_data()
+    if not os.path.exists(data_path):
+        print(f"Error: Data file not found at {data_path}")
     else:
-        print(f"Data file not found at '{data_path}'.")
-        data = generate_synthetic_data()
+        df = pd.read_csv(data_path, index_col=0, parse_dates=True)
 
-    bt = Backtest(data, BollingerBandMeanReversion, cash=100_000, commission=.002)
+        # Use a smaller slice of data for faster testing
+        df = df.iloc[-5000:]
 
-    print("Running backtest with default parameters...")
-    stats = bt.run()
+        df = preprocess_data(df)
 
-    os.makedirs('results', exist_ok=True)
+        bt = Backtest(df, BollingerBandMeanReversion, cash=100000, commission=.002, finalize_trades=True)
 
-    def sanitize_stats(stats):
-        sanitized = {}
-        for key, value in stats.items():
-            if isinstance(value, (pd.Series, pd.DataFrame)): continue
-            if isinstance(value, (np.floating, np.integer)):
-                sanitized[key] = float(value) if np.isfinite(value) else None
-            elif isinstance(value, int): sanitized[key] = int(value)
-            elif isinstance(value, pd.Timestamp): sanitized[key] = value.isoformat()
-            elif isinstance(value, pd.Timedelta): sanitized[key] = str(value)
-            elif pd.isna(value): sanitized[key] = None
-            elif key.startswith('_'): continue
-            else: sanitized[key] = value
-        return sanitized
+        print("Running backtest...")
+        stats = bt.run()
+        print(stats)
 
-    final_stats = sanitize_stats(stats)
+        results_dir = 'results'
+        os.makedirs(results_dir, exist_ok=True)
 
-    with open('results/temp_result.json', 'w') as f:
-        json.dump(final_stats, f, indent=2)
+        sanitized = sanitize_stats(stats)
+        with open(os.path.join(results_dir, 'temp_result.json'), 'w') as f:
+            json.dump(sanitized, f, indent=4)
+        print(f"\nResults saved to {results_dir}/temp_result.json")
 
-    print("Backtest results saved to results/temp_result.json")
-    print(stats)
-
-    try:
-        plot_filename = 'results/bollinger_band_mean_reversion.html'
-        bt.plot(filename=plot_filename)
-        print(f"Backtest plot saved to {plot_filename}")
-    except Exception as e:
-        print(f"Could not generate plot: {e}")
+        plot_filename = os.path.join(results_dir, 'bollinger_band_mean_reversion.html')
+        try:
+            bt.plot(filename=plot_filename)
+            print(f"Plot saved to {plot_filename}")
+        except Exception as e:
+            print(f"Could not generate plot due to error: {e}")

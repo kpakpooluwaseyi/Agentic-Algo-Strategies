@@ -16,4 +16,5 @@ youtube-transcript-api==0.6.2
 openai==1.59.5
 Backtesting
 scipy
+scikit-learn
 # Add any other dependencies your agents need
