@@ -49,6 +49,13 @@ def smma(series: pd.Series, length: int) -> pd.Series:
     return smma_values
 
 
+def _sanitize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Standardizes column names to be capitalized."""
+    df = df.copy()
+    df.columns = [str(col).strip().capitalize() for col in df.columns]
+    return df
+
+
 def rsimfi(df: pd.DataFrame, period: int = 60, multiplier: float = 230, pos_y: float = 2.5) -> pd.DataFrame:
     """
     RSI + Money Flow Index composite.
@@ -57,7 +64,7 @@ def rsimfi(df: pd.DataFrame, period: int = 60, multiplier: float = 230, pos_y: f
     
     Adds column: 'rsimfi'
     """
-    df = df.copy()
+    df = _sanitize_columns(df)
     
     # Avoid division by zero
     hl_range = df['High'] - df['Low']
@@ -89,7 +96,7 @@ def wavetrend(df: pd.DataFrame,
     Adds columns: 'wt1', 'wt2', 'wt_vwap', 'wt_cross', 'wt_cross_up', 'wt_cross_down',
                   'wt_oversold', 'wt_overbought', 'buy_signal', 'sell_signal'
     """
-    df = df.copy()
+    df = _sanitize_columns(df)
     
     # hlc3 = (high + low + close) / 3
     hlc3 = (df['High'] + df['Low'] + df['Close']) / 3
@@ -155,7 +162,7 @@ def stoch_rsi(df: pd.DataFrame,
     
     Adds columns: 'stoch_rsi_k', 'stoch_rsi_d'
     """
-    df = df.copy()
+    df = _sanitize_columns(df)
     
     # Calculate RSI
     delta = df['Close'].diff()
