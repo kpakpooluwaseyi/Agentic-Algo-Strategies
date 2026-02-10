@@ -4,6 +4,35 @@ import numpy as np
 import json
 import os
 from scipy.signal import find_peaks
+import pandas_ta as ta
+from src.indicators.vumanchu import cipher_b
+
+def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adds all required indicators to the DataFrame.
+    """
+    df.ta.ema(length=5, append=True)
+    df.ta.ema(length=13, append=True)
+    df.ta.ema(length=50, append=True)
+    df.ta.ema(length=200, append=True)
+    df.ta.rsi(length=14, append=True)
+    df.ta.atr(length=14, append=True)
+    df.ta.pivots(append=True)
+
+    # Add VuManchu Cipher B
+    df = cipher_b(df)
+
+    # Add Volume MA
+    df['Volume_MA'] = df['Volume'].rolling(window=20).mean()
+
+    # Calculate ADR
+    df_daily = df.resample('D').agg({'High': 'max', 'Low': 'min', 'Close': 'last'}).dropna()
+    df_daily['true_range'] = ta.true_range(df_daily['High'], df_daily['Low'], df_daily['Close'])
+    df_daily['ADR'] = df_daily['true_range'].rolling(window=14).mean()
+    df['ADR'] = df.index.normalize().map(df_daily['ADR'])
+    df['ADR'].ffill(inplace=True)
+
+    return df
 
 def find_swing_points(data, prominence=2, width=1):
     """
@@ -55,22 +84,43 @@ def sanitize_stats(stats):
     return sanitized
 
 
-class The33TradeStrategy(Strategy):
+class The33Trade(Strategy):
     """
     Strategy based on the "3-3 trade" concept of multi-day and intraday cycle peaks.
+
+    Note: Inherits from backtesting.Strategy for compatibility with the backtesting library,
+    as requested implementation details align with this framework over the alternative
+    MoonDevStrategy base class.
     """
     # Optimizable parameters
-    rr_ratio = 2.0
+    sl_atr_multiplier = 2.0
+    tp_atr_multiplier = 3.0
     prominence = 2
     width = 1
     day_lookback = 288 # 3 days of 15m candles
-    intraday_lookback = 12 # 3 hours of 15m candles
+    intraday_lookback = 24 # 6 hours of 15m candles
+    rsi_ob = 70
+    rsi_os = 30
 
     def init(self):
         """
         Initialize indicators and strategy variables.
         """
-        # Intraday (15m) swing points
+        # Indicators from preprocess_data
+        self.ema5 = self.I(lambda: self.data.df['EMA_5'])
+        self.ema13 = self.I(lambda: self.data.df['EMA_13'])
+        self.ema50 = self.I(lambda: self.data.df['EMA_50'])
+        self.ema200 = self.I(lambda: self.data.df['EMA_200'])
+        self.rsi = self.I(lambda: self.data.df['RSI_14'])
+        self.atr = self.I(lambda: self.data.df['ATRr_14'])
+        self.adr = self.I(lambda: self.data.df['ADR'])
+        self.volume_ma = self.I(lambda: self.data.df['Volume_MA'])
+
+        # Cipher B Indicators
+        self.cipher_buy = self.I(lambda: self.data.df['buy_signal'])
+        self.cipher_sell = self.I(lambda: self.data.df['sell_signal'])
+
+        # Intraday (15m) swing points for cycle counting
         self.swing_points_15m = self.I(find_swing_points, self.data.Close, prominence=self.prominence, width=self.width)
 
         # Multi-day (1h) swing points
@@ -88,37 +138,101 @@ class The33TradeStrategy(Strategy):
         self.data.df['swing_points_1h'].fillna(0, inplace=True)
         self.swing_points_1h = self.I(lambda: self.data.df['swing_points_1h'].values)
 
+        # 4H trend filter
+        df_4h = self.data.df.resample('4H').agg({
+            'Open': 'first', 'High': 'max', 'Low': 'min', 'Close': 'last'
+        }).dropna()
+        df_4h['EMA_50_4H'] = ta.ema(df_4h['Close'], length=50)
+        self.data.df['EMA_50_4H'] = self.data.df.index.floor('4H').map(df_4h['EMA_50_4H'])
+        self.data.df['EMA_50_4H'].ffill(inplace=True)
+        self.ema50_4h = self.I(lambda: self.data.df['EMA_50_4H'].values)
+
 
     def next(self):
         """
         Defines the trading logic for each bar.
         """
-        # --- Multi-Day Count ---
-        if len(self.swing_points_1h) < self.day_lookback:
+        if len(self.swing_points_1h) < self.day_lookback or len(self.swing_points_15m) < self.intraday_lookback:
             return
 
-        recent_swings_1h = self.swing_points_1h[-self.day_lookback:]
-        deduplicated_swings_1h = deduplicate_swings(recent_swings_1h)
-        three_level_rise_1h = np.sum(deduplicated_swings_1h == 1) >= 3
+        # --- Cycle Counts ---
+        # Multi-day (3-day lookback on 1H swings)
+        day_swings = self.swing_points_1h[-self.day_lookback:]
+        deduplicated_day_swings = deduplicate_swings(day_swings)
+        three_level_rise = np.sum(deduplicated_day_swings == 1) >= 3
+        three_level_drop = np.sum(deduplicated_day_swings == -1) >= 3
 
-        # --- Intraday Count ---
-        if len(self.swing_points_15m) < self.intraday_lookback:
-            return
+        # Intraday (lookback on 15m swings)
+        intraday_swings = self.swing_points_15m[-self.intraday_lookback:]
+        three_level_rise_intra = np.sum(intraday_swings == 1) >= 3
+        three_level_drop_intra = np.sum(intraday_swings == -1) >= 3
 
-        recent_swings_15m = self.swing_points_15m[-self.intraday_lookback:]
-        three_level_rise_15m = np.sum(recent_swings_15m == 1) >= 3
+        # --- Reversal Patterns (simple check for M/W formations on 15m swings) ---
+        swing_points_15m_array = np.asarray(self.swing_points_15m)
+        is_m_formation = np.array_equal(swing_points_15m_array[-5:], [1, -1, 1, -1, 0]) or np.array_equal(swing_points_15m_array[-4:], [1, -1, 1, 0])
+        is_w_formation = np.array_equal(swing_points_15m_array[-5:], [-1, 1, -1, 1, 0]) or np.array_equal(swing_points_15m_array[-4:], [-1, 1, -1, 0])
 
-        if three_level_rise_1h and three_level_rise_15m and not self.position:
-            # Find the most recent swing high for stop loss placement
-            recent_swing_high_indices = np.where(self.swing_points_15m[-self.intraday_lookback:] == 1)[0]
-            if len(recent_swing_high_indices) > 0:
-                last_swing_high_index = len(self.data.Close) - self.intraday_lookback + recent_swing_high_indices[-1]
-                stop_loss = self.data.High[last_swing_high_index]
+        # Pin Bar detection
+        is_bullish_pin_bar = self.is_pin_bar(self.data, -1, is_bullish=True)
+        is_bearish_pin_bar = self.is_pin_bar(self.data, -1, is_bullish=False)
+
+        reversal_pattern_long = is_w_formation or is_bullish_pin_bar
+        reversal_pattern_short = is_m_formation or is_bearish_pin_bar
+
+        # --- Trend Filter ---
+        is_uptrend = self.data.Close[-1] > self.ema50_4h[-1]
+        is_downtrend = self.data.Close[-1] < self.ema50_4h[-1]
+
+        # --- Entry Conditions ---
+        if not self.position:
+            # Short Entry (Counter-trend: look for rise in uptrend)
+            if is_uptrend and three_level_rise and three_level_rise_intra and reversal_pattern_short and self.cipher_sell[-1] and self.rsi[-1] > self.rsi_ob and self.data.Volume[-1] > self.volume_ma[-1]:
                 entry_price = self.data.Close[-1]
-                take_profit = entry_price - (stop_loss - entry_price) * self.rr_ratio
+                stop_loss = entry_price + self.atr[-1] * self.sl_atr_multiplier
+                take_profit = entry_price - self.atr[-1] * self.tp_atr_multiplier
 
-                if entry_price < stop_loss:
-                    self.sell(sl=stop_loss, tp=take_profit)
+                # ADR Check for plausible target
+                if (entry_price - take_profit) < self.adr[-1]:
+                    if entry_price < stop_loss:
+                        self.sell(sl=stop_loss, tp=take_profit)
+
+            # Long Entry (Counter-trend: look for drop in downtrend)
+            elif is_downtrend and three_level_drop and three_level_drop_intra and reversal_pattern_long and self.cipher_buy[-1] and self.rsi[-1] < self.rsi_os and self.data.Volume[-1] > self.volume_ma[-1]:
+                entry_price = self.data.Close[-1]
+                stop_loss = entry_price - self.atr[-1] * self.sl_atr_multiplier
+                take_profit = entry_price + self.atr[-1] * self.tp_atr_multiplier
+
+                # ADR Check for plausible target
+                if (take_profit - entry_price) < self.adr[-1]:
+                    if entry_price > stop_loss:
+                        self.buy(sl=stop_loss, tp=take_profit)
+
+    def is_pin_bar(self, data, index, is_bullish, body_ratio_threshold=0.33, wick_ratio_threshold=0.5):
+        """
+        Checks if the candle at the given index is a pin bar.
+        """
+        open_price = data.Open[index]
+        high_price = data.High[index]
+        low_price = data.Low[index]
+        close_price = data.Close[index]
+
+        body_size = abs(close_price - open_price)
+        total_range = high_price - low_price
+
+        if total_range == 0:
+            return False
+
+        body_to_range_ratio = body_size / total_range
+
+        if body_to_range_ratio > body_ratio_threshold:
+            return False
+
+        if is_bullish: # Hammer
+            lower_wick_size = min(open_price, close_price) - low_price
+            return lower_wick_size / total_range >= wick_ratio_threshold
+        else: # Shooting Star
+            upper_wick_size = high_price - max(open_price, close_price)
+            return upper_wick_size / total_range >= wick_ratio_threshold
 
 if __name__ == '__main__':
     data_path = 'data/BTC-USD-15m.csv'
@@ -128,10 +242,11 @@ if __name__ == '__main__':
         # Clean up column names
         data.columns = [c.strip().title() for c in data.columns]
         data = data.loc[:, ~data.columns.str.contains('^Unnamed')]
+        data = preprocess_data(data)
     else:
         raise FileNotFoundError(f"Data file not found at {data_path}")
 
-    bt = Backtest(data, The33TradeStrategy, cash=100000, commission=.002)
+    bt = Backtest(data, The33Trade, cash=100000, commission=.002)
 
     stats = bt.run()
 
