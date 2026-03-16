@@ -44,43 +44,39 @@ class ROEBMProxyStrategy(Strategy):
     - Exits after a fixed holding period.
     """
     # --- Strategy Parameters ---
-    long_sma_period = 200  # Proxy for long-term trend/momentum (ROE)
-    short_sma_period = 50  # Proxy for short-term value/pullbacks (BM)
-    hold_period = 28 * 24 * 4  # Approx. 1 month in 15-min bars (28 days)
-
+    long_sma_period = 200  # Proxy for long-term trend
+    short_sma_period = 20   # Faster SMA for more signals (reduced from 50)
+    atr_period = 14
+    risk_to_reward = 2.0
+    
     def init(self):
         """Initialize indicators."""
         self.long_sma = self.I(SMA, self.data.Close, self.long_sma_period)
         self.short_sma = self.I(SMA, self.data.Close, self.short_sma_period)
+        self.atr = self.I(lambda d: pd.Series(d).rolling(self.atr_period).mean(), 
+                          (self.data.High - self.data.Low))
         self.entry_bar = None
 
     def next(self):
         """Define the strategy logic."""
-        # --- Time-based Exit Logic ---
-        if self.position:
-            if len(self.data) - 1 - self.entry_bar >= self.hold_period:
-                self.position.close()
-                self.entry_bar = None
-            return
-
         # --- Entry Logic ---
-        price = self.data.Close[-1]
-
-        # Long Entry: Price is in an uptrend (above long SMA) and crosses
-        # above the short-term SMA (pullback entry).
-        is_uptrend = price > self.long_sma[-1]
-        long_signal = crossover(self.data.Close, self.short_sma)
-        if is_uptrend and long_signal:
-            self.buy()
-            self.entry_bar = len(self.data) - 1
-
-        # Short Entry: Price is in a downtrend (below long SMA) and crosses
-        # below the short-term SMA (pullback entry).
-        is_downtrend = price < self.long_sma[-1]
-        short_signal = crossover(self.short_sma, self.data.Close)
-        if is_downtrend and short_signal:
-            self.sell()
-            self.entry_bar = len(self.data) - 1
+        if not self.position:
+            price = self.data.Close[-1]
+            is_uptrend = price > self.long_sma[-1]
+            is_downtrend = price < self.long_sma[-1]
+            
+            # Use faster crossover for more frequent signals
+            if is_uptrend and crossover(self.data.Close, self.short_sma):
+                atr_val = self.atr[-1]
+                sl = price - 2 * atr_val
+                tp = price + self.risk_to_reward * (2 * atr_val)
+                self.buy(sl=sl, tp=tp)
+            
+            elif is_downtrend and crossover(self.short_sma, self.data.Close):
+                atr_val = self.atr[-1]
+                sl = price + 2 * atr_val
+                tp = price - self.risk_to_reward * (2 * atr_val)
+                self.sell(sl=sl, tp=tp)
 
 
 if __name__ == '__main__':

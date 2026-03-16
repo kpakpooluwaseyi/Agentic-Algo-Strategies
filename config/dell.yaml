@@ -1,0 +1,96 @@
+# Dell Executor (WSL2 / x86_64) Configuration
+# SECURITY: This file contains NON-SENSITIVE configuration only.
+# Exchange API keys MUST be managed via OS keyring (keyring_manager.py) - NEVER stored here.
+
+# Machine identity
+machine: dell
+platform: wsl2
+arch: x86_64
+
+# Network - Tailscale mesh (all internal traffic must use these addresses)
+tailscale:
+  mac_ip: "100.x.x.x"        # REPLACE with actual Tailscale IP of Mac Validator
+  dell_ip: "100.x.x.x"       # REPLACE with actual Tailscale IP of Dell Executor
+  interface: tailscale0
+
+# Redis configuration (Dell-local)
+redis:
+  host: "127.0.0.1"
+  port: 6379
+  db: 0
+  # Streams
+  stream_strategy_ready: "stream:strategy_ready"
+  stream_heartbeat: "stream:heartbeat"
+  consumer_group: "dell_executor"
+  # Performance
+  max_memory_mb: 4096
+  decode_responses: false  # Keep binary for MessagePack payloads
+
+# FastAPI / API server
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 1            # Single-threaded to avoid GIL contention with async
+  reload: false
+  log_level: "info"
+  # JWT
+  access_token_expire_minutes: 15
+  refresh_token_expire_hours: 12
+
+# Socket.IO
+socketio:
+  namespaces:
+    - "/dashboard"
+    - "/b2b"            # Phase 2 — B2B subscribers
+  rooms:
+    - "incubator"
+    - "passport"
+    - "alerts"
+    - "regime"
+
+# Next.js PWA Dashboard
+dashboard:
+  host: "0.0.0.0"
+  port: 3000
+
+# Execution engine
+execution:
+  MAX_INCUBATOR_BOTS: 50
+  HEARTBEAT_INTERVAL_S: 5
+  HEARTBEAT_TIMEOUT_S: 15        # 3 × 5s = Safe Harbor trigger (NFR11)
+  API_MAX_REQUESTS_PER_S: 10     # NFR3: exchange rate limit budget
+  TICK_TO_TRADE_BUDGET_MS: 2500  # NFR1: 95th percentile SLA
+  ORACLE_TIMEOUT_MS: 750         # NFR2: Prediction Market REST timeout
+  SAFE_HARBOR_BRACKET_TIGHTEN_PCT: 0.5  # Tighten OCO by 50% in Safe Harbor
+
+# Strategy Memory DB (ChromaDB — on Dell)
+chromadb:
+  host: "127.0.0.1"
+  port: 8010
+  collection_strategy_dna: "strategy_dna"
+  collection_toxicity_tags: "toxicity_tags"
+  TOXICITY_SIMILARITY_THRESHOLD: 0.92
+  TOXICITY_DECAY_MONTHS: 6
+
+# State recovery (SQLite WAL)
+state_recovery:
+  db_path: "rbi_core/resilience/state.db"
+  recovery_target_s: 90          # NFR12: resume within 90s after reboot
+  migrations_dir: "rbi_core/resilience/migrations"
+
+# Golden Archive
+golden_archive:
+  path: "golden-archive"
+  rsync_target: ""              # REPLACE with external drive mount path
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  log_dir: "logs"
+  max_bytes: 10485760           # 10MB per file
+  backup_count: 5
+
+# NTP
+ntp:
+  MAX_OFFSET_MS: 50             # NFR10: sub-50ms tolerance

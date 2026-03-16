@@ -1,0 +1,23 @@
+[Unit]
+Description=RBI Swarm Executor — Live Strategy Execution Engine
+After=network.target redis.service
+Requires=redis.service
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/moon-dev-ai-agents-for-trading
+ExecStart=/home/%i/moon-dev-ai-agents-for-trading/venv/bin/python -m rbi_core.execution.engine
+ExecStop=/bin/kill -SIGTERM $MAINPID
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rbi-executor
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

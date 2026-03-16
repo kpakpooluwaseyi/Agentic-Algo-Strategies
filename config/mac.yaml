@@ -1,0 +1,63 @@
+# Mac M1 Validator (ARM64) Configuration
+# SECURITY: This file contains NON-SENSITIVE configuration only.
+# Exchange API keys MUST be managed via OS Keychain (Python keyring) - NEVER stored here.
+
+# Machine identity
+machine: mac
+platform: macos
+arch: arm64
+
+# Network - Tailscale mesh
+tailscale:
+  mac_ip: "100.x.x.x"        # REPLACE with actual Tailscale IP of this Mac
+  dell_ip: "100.x.x.x"       # REPLACE with actual Tailscale IP of Dell Executor
+
+# Redis connection to Dell (over Tailscale)
+redis:
+  host: "100.x.x.x"          # REPLACE with Dell Tailscale IP
+  port: 6379
+  db: 0
+  stream_strategy_ready: "stream:strategy_ready"
+  stream_heartbeat: "stream:heartbeat"
+  consumer_group: "mac_validator"
+  decode_responses: false     # Keep binary for MessagePack payloads
+
+# VectorBT batch simulator
+vectorbt:
+  BATCH_MEMORY_CEILING_GB: 6.0  # NFR6: never exceed 6GB peak RAM
+  BACKTEST_TIMEOUT_S: 45         # NFR5: ≤45s per Strategy DNA
+  GC_AFTER_EVERY_N_BATCHES: 1   # explicit gc.collect() after every batch
+  MONTE_CARLO_PERMUTATIONS: 100
+
+# Parquet data store
+parquet:
+  data_dir: "data"             # Per-ticker layout: data/{TICKER}/1m.parquet
+  compression: "zstd"
+  compression_level: 3
+  STORAGE_CEILING_GB: 50       # NFR8: ≤50GB total for 100 tickers / 5yr
+
+# Mac → Dell messaging
+stream:
+  payload_format: "msgpack"    # Binary, ~30% smaller than JSON (FR4)
+  checksum_algorithm: "sha256"
+
+# Heartbeat sender
+heartbeat:
+  HEARTBEAT_INTERVAL_S: 5      # Must match Dell's expectation
+
+# Logging
+logging:
+  level: "INFO"
+  format: "json"
+  log_dir: "logs"
+  max_bytes: 10485760
+  backup_count: 5
+
+# NTP
+ntp:
+  MAX_OFFSET_MS: 50            # NFR10: sub-50ms tolerance
+
+# Secrets (Mac Keychain)
+secrets:
+  backend: "keyring"           # Uses pyobjc-framework-Security on macOS
+  service_name: "rbi-swarm"

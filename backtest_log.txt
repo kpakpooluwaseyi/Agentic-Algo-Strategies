@@ -1,0 +1,1083 @@
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/strategies/fl_001_asia_uk_mw.py:139: UserWarning: Some prices are larger than initial cash value. Note that fractional trading is not supported by this class. If you want to trade Bitcoin, increase initial cash, or trade μBTC or satoshis instead (see e.g. class `backtesting.lib.FractionalBacktest`.
+  bt = Backtest(data, FL001AsiaUKMW, cash=10000, commission=.002)
+Backtest.run:   0%|          | 0/5562 [00:00<?, ?bar/s]/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=29: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=30: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=31: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=32: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=33: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=34: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=35: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=36: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=37: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=38: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=39: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=40: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=125: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=126: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=127: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=128: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=129: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=130: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=131: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=132: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=133: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=134: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=136: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=318: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=320: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=321: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=322: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=323: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=324: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=325: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=326: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=327: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=328: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=413: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=414: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=423: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=702: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=703: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=704: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=705: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=706: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=707: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=708: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=709: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=710: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=711: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=712: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=893: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=894: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=895: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=896: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=897: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=898: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=899: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=900: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=901: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=902: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=903: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=904: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1186: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1187: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1188: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1189: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1190: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1191: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1192: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1327: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+2025-10-15 02:00:00+00:00: Asia Range: 1667.59 (1.49%), Peaks: 4
+2025-10-15 02:00:00+00:00: Potential M found
+2025-10-15 02:00:00+00:00: SELL M at 112586.4140625
+2025-10-15 02:15:00+00:00: Potential M found
+2025-10-15 02:15:00+00:00: SELL M at 112523.4140625
+2025-10-15 02:30:00+00:00: Potential M found
+2025-10-15 02:30:00+00:00: SELL M at 112507.1640625
+2025-10-15 02:45:00+00:00: Potential M found
+2025-10-15 02:45:00+00:00: SELL M at 112611.09375
+2025-10-15 03:00:00+00:00: Potential M found
+2025-10-15 03:00:00+00:00: SELL M at 112834.6953125
+2025-10-15 03:15:00+00:00: Potential M found
+2025-10-15 03:15:00+00:00: SELL M at 113071.140625
+2025-10-15 03:30:00+00:00: Potential M found
+2025-10-15 03:30:00+00:00: SELL M at 113331.359375
+2025-10-15 03:45:00+00:00: Potential M found
+2025-10-15 03:45:00+00:00: SELL M at 113079.984375
+2025-10-15 04:00:00+00:00: Potential M found
+2025-10-15 04:00:00+00:00: SELL M at 113083.6953125
+2025-10-15 04:15:00+00:00: Potential M found
+2025-10-15 04:15:00+00:00: SELL M at 112680.7421875
+2025-10-15 04:30:00+00:00: Potential M found
+2025-10-15 04:30:00+00:00: SELL M at 112665.9140625
+2025-10-15 04:45:00+00:00: Potential M found
+2025-10-15 04:45:00+00:00: SELL M at 112552.3359375
+2025-10-16 02:00:00+00:00: Asia Range: 1319.62 (1.19%), Peaks: 5
+2025-10-16 02:00:00+00:00: Potential W found
+2025-10-16 02:00:00+00:00: BUY W at 111390.0546875
+2025-10-16 02:15:00+00:00: Potential W found
+2025-10-16 02:15:00+00:00: BUY W at 110853.75
+2025-10-16 02:30:00+00:00: Potential W found
+2025-10-16 02:30:00+00:00: BUY W at 110945.9140625
+2025-10-16 02:45:00+00:00: Potential W found
+2025-10-16 02:45:00+00:00: BUY W at 110613.65625
+2025-10-16 03:00:00+00:00: Potential W found
+2025-10-16 03:00:00+00:00: BUY W at 110649.1484375
+2025-10-16 03:15:00+00:00: Potential W found
+2025-10-16 03:15:00+00:00: BUY W at 110575.609375
+2025-10-16 03:30:00+00:00: Potential W found
+2025-10-16 03:30:00+00:00: BUY W at 110761.09375
+2025-10-16 03:45:00+00:00: Potential W found
+2025-10-16 03:45:00+00:00: BUY W at 110851.3828125
+2025-10-16 04:00:00+00:00: Potential W found
+2025-10-16 04:00:00+00:00: BUY W at 110907.40625
+2025-10-16 04:15:00+00:00: Potential W found
+2025-10-16 04:15:00+00:00: BUY W at 110781.171875
+2025-10-16 04:30:00+00:00: Potential W found
+2025-10-16 04:45:00+00:00: Potential W found
+2025-10-16 04:45:00+00:00: BUY W at 111173.625
+2025-10-17 02:00:00+00:00: Asia Range: 2448.69 (2.29%), Peaks: 4
+2025-10-18 02:00:00+00:00: Asia Range: 836.27 (0.79%), Peaks: 5
+2025-10-18 02:00:00+00:00: Potential M found
+2025-10-18 02:15:00+00:00: Potential M found
+2025-10-18 02:15:00+00:00: SELL M at 107128.515625
+2025-10-18 02:30:00+00:00: Potential M found
+2025-10-18 02:45:00+00:00: Potential M found
+2025-10-18 02:45:00+00:00: SELL M at 106715.453125
+2025-10-18 03:00:00+00:00: Potential M found
+2025-10-18 03:00:00+00:00: SELL M at 106954.203125
+2025-10-18 03:15:00+00:00: Potential M found
+2025-10-18 03:15:00+00:00: SELL M at 106793.640625
+2025-10-18 03:30:00+00:00: Potential M found
+2025-10-18 03:30:00+00:00: SELL M at 106801.109375
+2025-10-18 03:45:00+00:00: Potential M found
+2025-10-18 03:45:00+00:00: SELL M at 106828.34375
+2025-10-18 04:00:00+00:00: Potential M found
+2025-10-18 04:00:00+00:00: SELL M at 106757.1640625
+2025-10-18 04:15:00+00:00: Potential M found
+2025-10-18 04:15:00+00:00: SELL M at 106882.25
+2025-10-18 04:30:00+00:00: Potential M found
+2025-10-18 04:30:00+00:00: SELL M at 106848.03125
+2025-10-18 04:45:00+00:00: Potential M found
+2025-10-18 04:45:00+00:00: SELL M at 106957.3359375
+2025-10-19 02:00:00+00:00: Asia Range: 708.07 (0.66%), Peaks: 5
+2025-10-19 02:00:00+00:00: Potential W found
+2025-10-19 02:00:00+00:00: BUY W at 106865.1640625
+2025-10-19 02:15:00+00:00: Potential W found
+2025-10-19 02:15:00+00:00: BUY W at 106913.984375
+2025-10-19 02:30:00+00:00: Potential W found
+2025-10-19 02:45:00+00:00: Potential W found
+2025-10-19 03:00:00+00:00: Potential W found
+2025-10-19 03:15:00+00:00: Potential W found
+2025-10-19 03:30:00+00:00: Potential W found
+2025-10-19 03:45:00+00:00: Potential W found
+2025-10-19 04:00:00+00:00: Potential W found
+2025-10-19 04:15:00+00:00: Potential W found
+2025-10-19 04:30:00+00:00: Potential W found
+2025-10-19 04:30:00+00:00: BUY W at 107005.0
+2025-10-19 04:45:00+00:00: Potential W found
+2025-10-20 02:00:00+00:00: Asia Range: 3422.91 (3.17%), Peaks: 4
+2025-10-21 02:00:00+00:00: Asia Range: 2950.49 (2.74%), Peaks: 3
+2025-10-22 02:00:00+00:00: Asia Range: 757.40 (0.70%), Peaks: 5
+2025-10-22 02:00:00+00:00: Potential M found
+2025-10-22 02:15:00+00:00: Potential M found
+2025-10-22 02:15:00+00:00: SELL M at 108013.328125
+2025-10-22 02:30:00+00:00: Potential M found
+2025-10-22 02:30:00+00:00: SELL M at 108234.2890625
+2025-10-22 02:45:00+00:00: Potential M found
+2025-10-22 02:45:00+00:00: SELL M at 108344.0
+2025-10-22 03:00:00+00:00: Potential M found
+2025-10-22 03:00:00+00:00: SELL M at 108145.375
+2025-10-22 03:15:00+00:00: Potential M found
+2025-10-22 03:15:00+00:00: SELL M at 108362.5625
+2025-10-22 03:30:00+00:00: Potential M found
+2025-10-22 03:30:00+00:00: SELL M at 108328.1640625
+2025-10-22 03:45:00+00:00: Potential M found
+2025-10-22 03:45:00+00:00: SELL M at 108288.5078125
+2025-10-22 04:00:00+00:00: Potential M found
+2025-10-22 04:00:00+00:00: SELL M at 108089.9296875
+2025-10-22 04:15:00+00:00: Potential M found
+2025-10-22 04:15:00+00:00: SELL M at 108161.8828125
+2025-10-22 04:30:00+00:00: Potential M found
+2025-10-22 04:30:00+00:00: SELL M at 107964.546875
+2025-10-22 04:45:00+00:00: Potential M found
+2025-10-22 04:45:00+00:00: SELL M at 108006.6171875
+2025-10-23 02:00:00+00:00: Asia Range: 2383.15 (2.21%), Peaks: 5
+2025-10-24 02:00:00+00:00: Asia Range: 1224.19 (1.11%), Peaks: 5
+2025-10-24 02:00:00+00:00: Potential W found
+2025-10-24 02:00:00+00:00: BUY W at 111148.71875
+2025-10-24 02:15:00+00:00: Potential W found
+2025-10-24 02:15:00+00:00: BUY W at 111199.03125
+2025-10-24 02:30:00+00:00: Potential W found
+2025-10-24 02:30:00+00:00: BUY W at 111079.390625
+2025-10-24 02:45:00+00:00: Potential W found
+2025-10-24 02:45:00+00:00: BUY W at 111111.8203125
+2025-10-24 03:00:00+00:00: Potential W found
+2025-10-24 03:00:00+00:00: BUY W at 111172.40625
+2025-10-24 03:15:00+00:00: Potential W found
+2025-10-24 03:15:00+00:00: BUY W at 110895.1328125
+2025-10-24 03:30:00+00:00: Potential W found
+2025-10-24 03:30:00+00:00: BUY W at 111070.0703125
+2025-10-24 03:45:00+00:00: Potential W found
+2025-10-24 03:45:00+00:00: BUY W at 111116.984375
+2025-10-24 04:00:00+00:00: Potential W found
+2025-10-24 04:00:00+00:00: BUY W at 111363.734375
+2025-10-24 04:15:00+00:00: Potential W found
+2025-10-24 04:15:00+00:00: BUY W at 111434.0234375
+2025-10-24 04:30:00+00:00: Potential W found
+2025-10-24 04:30:00+00:00: BUY W at 111363.7265625
+2025-10-24 04:45:00+00:00: Potential W found
+2025-10-24 04:45:00+00:00: BUY W at 111325.984375
+2025-10-25 02:00:00+00:00: Asia Range: 706.34 (0.64%), Peaks: 6
+2025-10-26 02:00:00+00:00: Asia Range: 558.65 (0.50%), Peaks: 4
+2025-10-27 02:00:00+00:00: Asia Range: 1349.80 (1.18%), Peaks: 5
+2025-10-27 02:00:00+00:00: Potential M found
+2025-10-27 02:15:00+00:00: Potential M found
+2025-10-27 02:30:00+00:00: Potential M found
+2025-10-27 02:45:00+00:00: Potential M found
+2025-10-27 03:00:00+00:00: Potential M found
+2025-10-27 03:15:00+00:00: Potential M found
+2025-10-27 03:15:00+00:00: SELL M at 115197.46875
+2025-10-27 03:30:00+00:00: Potential M found
+2025-10-27 03:30:00+00:00: SELL M at 115263.0859375
+2025-10-27 03:45:00+00:00: Potential M found
+2025-10-27 03:45:00+00:00: SELL M at 114994.0078125
+2025-10-27 04:00:00+00:00: Potential M found
+2025-10-27 04:00:00+00:00: SELL M at 115045.640625
+2025-10-27 04:15:00+00:00: Potential M found
+2025-10-27 04:15:00+00:00: SELL M at 115150.84375
+2025-10-27 04:30:00+00:00: Potential M found
+2025-10-27 04:30:00+00:00: SELL M at 115320.6171875
+2025-10-27 04:45:00+00:00: Potential M found
+2025-10-27 04:45:00+00:00: SELL M at 115263.0703125
+2025-10-29 02:00:00+00:00: Asia Range: 1212.14 (1.08%), Peaks: 4
+2025-10-29 02:00:00+00:00: Potential W found
+2025-10-29 02:00:00+00:00: BUY W at 113281.859375
+2025-10-29 02:15:00+00:00: Potential W found
+2025-10-29 02:30:00+00:00: Potential W found/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1329: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1332: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1333: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1334: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1335: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1336: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1337: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1338: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1614: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1615: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1616: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1617: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1618: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1619: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1620: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1621: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1622: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1623: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1624: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1625: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1710: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1711: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1712: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1720: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=1721: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2190: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2191: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2192: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2193: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2194: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2195: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2196: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2197: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2198: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2199: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2382: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2383: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2384: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2385: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2386: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2387: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2388: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2389: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2391: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2392: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2393: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2478: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2479: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2480: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2481: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2482: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2483: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2484: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2485: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2486: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2487: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2488: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2489: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2670: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2671: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2672: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2673: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=2674: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3054: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3055: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+
+2025-10-29 02:30:00+00:00: BUY W at 113312.09375
+2025-10-29 02:45:00+00:00: Potential W found
+2025-10-29 03:00:00+00:00: Potential W found
+2025-10-29 03:15:00+00:00: Potential W found
+2025-10-29 03:15:00+00:00: BUY W at 113325.5390625
+2025-10-29 03:30:00+00:00: Potential W found
+2025-10-29 03:30:00+00:00: BUY W at 113115.0625
+2025-10-29 03:45:00+00:00: Potential W found
+2025-10-29 03:45:00+00:00: BUY W at 113060.796875
+2025-10-29 04:00:00+00:00: Potential W found
+2025-10-29 04:00:00+00:00: BUY W at 112945.40625
+2025-10-29 04:15:00+00:00: Potential W found
+2025-10-29 04:15:00+00:00: BUY W at 113008.6171875
+2025-10-29 04:30:00+00:00: Potential W found
+2025-10-29 04:30:00+00:00: BUY W at 112901.3046875
+2025-10-29 04:45:00+00:00: Potential W found
+2025-10-29 04:45:00+00:00: BUY W at 113024.09375
+2025-10-30 02:00:00+00:00: Asia Range: 2900.40 (2.68%), Peaks: 3
+2025-10-31 02:00:00+00:00: Asia Range: 1475.79 (1.36%), Peaks: 3
+2025-11-01 02:00:00+00:00: Asia Range: 956.01 (0.87%), Peaks: 5
+2025-11-01 02:00:00+00:00: Potential W found
+2025-11-01 02:00:00+00:00: BUY W at 110030.5
+2025-11-01 02:15:00+00:00: Potential W found
+2025-11-01 02:15:00+00:00: BUY W at 110105.6640625
+2025-11-01 02:30:00+00:00: Potential W found
+2025-11-01 02:30:00+00:00: BUY W at 110052.28125
+2025-11-01 02:45:00+00:00: Potential W found
+2025-11-01 02:45:00+00:00: BUY W at 110013.703125
+2025-11-01 03:00:00+00:00: Potential W found
+2025-11-01 03:00:00+00:00: BUY W at 110097.9765625
+2025-11-01 03:15:00+00:00: Potential W found
+2025-11-01 03:15:00+00:00: BUY W at 110127.75
+2025-11-01 03:30:00+00:00: Potential W found
+2025-11-01 03:30:00+00:00: BUY W at 110129.6640625
+2025-11-01 03:45:00+00:00: Potential W found
+2025-11-01 03:45:00+00:00: BUY W at 110157.546875
+2025-11-01 04:00:00+00:00: Potential W found
+2025-11-01 04:00:00+00:00: BUY W at 110157.28125
+2025-11-01 04:15:00+00:00: Potential W found
+2025-11-01 04:15:00+00:00: BUY W at 110115.9296875
+2025-11-01 04:30:00+00:00: Potential W found
+2025-11-01 04:30:00+00:00: BUY W at 110024.6640625
+2025-11-01 04:45:00+00:00: Potential W found
+2025-11-01 04:45:00+00:00: BUY W at 109939.71875
+2025-11-02 02:00:00+00:00: Asia Range: 822.33 (0.75%), Peaks: 7
+2025-11-02 02:00:00+00:00: Potential W found
+2025-11-02 02:00:00+00:00: BUY W at 110501.921875
+2025-11-02 02:15:00+00:00: Potential W found
+2025-11-02 02:15:00+00:00: BUY W at 110460.96875
+2025-11-02 02:30:00+00:00: Potential W found
+2025-11-02 02:30:00+00:00: BUY W at 110630.234375
+2025-11-02 02:45:00+00:00: Potential W found
+2025-11-02 03:00:00+00:00: Potential W found
+2025-11-02 03:15:00+00:00: Potential W found
+2025-11-02 03:30:00+00:00: Potential W found
+2025-11-02 03:45:00+00:00: Potential W found
+2025-11-02 04:00:00+00:00: Potential W found
+2025-11-02 04:15:00+00:00: Potential W found
+2025-11-02 04:30:00+00:00: Potential W found
+2025-11-02 04:30:00+00:00: BUY W at 110560.703125
+2025-11-02 04:45:00+00:00: Potential W found
+2025-11-02 04:45:00+00:00: BUY W at 110665.265625
+2025-11-03 02:00:00+00:00: Asia Range: 2763.40 (2.58%), Peaks: 5
+2025-11-04 02:00:00+00:00: Asia Range: 3012.03 (2.89%), Peaks: 4
+2025-11-05 02:00:00+00:00: Asia Range: 3255.62 (3.29%), Peaks: 5
+2025-11-06 02:00:00+00:00: Asia Range: 1304.98 (1.27%), Peaks: 4
+2025-11-07 02:00:00+00:00: Asia Range: 1483.23 (1.47%), Peaks: 5
+2025-11-07 02:00:00+00:00: Potential W found
+2025-11-07 02:00:00+00:00: BUY W at 101888.8671875
+2025-11-07 02:15:00+00:00: Potential W found
+2025-11-07 02:15:00+00:00: BUY W at 101782.3984375
+2025-11-07 02:30:00+00:00: Potential W found
+2025-11-07 02:30:00+00:00: BUY W at 101768.21875
+2025-11-07 02:45:00+00:00: Potential W found
+2025-11-07 02:45:00+00:00: BUY W at 101970.90625
+2025-11-07 03:00:00+00:00: Potential W found
+2025-11-07 03:00:00+00:00: BUY W at 101849.3828125
+2025-11-07 03:15:00+00:00: Potential W found
+2025-11-07 03:15:00+00:00: BUY W at 101821.7109375
+2025-11-07 03:30:00+00:00: Potential W found
+2025-11-07 03:30:00+00:00: BUY W at 101548.453125
+2025-11-07 03:45:00+00:00: Potential W found
+2025-11-07 03:45:00+00:00: BUY W at 101472.078125
+2025-11-07 04:00:00+00:00: Potential W found
+2025-11-07 04:00:00+00:00: BUY W at 101341.9375
+2025-11-07 04:15:00+00:00: Potential W found
+2025-11-07 04:15:00+00:00: BUY W at 100968.2578125
+2025-11-07 04:30:00+00:00: Potential W found
+2025-11-07 04:45:00+00:00: Potential W found
+2025-11-08 02:00:00+00:00: Asia Range: 1117.75 (1.09%), Peaks: 6
+2025-11-09 02:00:00+00:00: Asia Range: 592.50 (0.58%), Peaks: 6
+2025-11-09 02:00:00+00:00: Potential W found
+2025-11-09 02:00:00+00:00: BUY W at 101845.0
+2025-11-09 02:15:00+00:00: Potential W found
+2025-11-09 02:15:00+00:00: BUY W at 101784.640625
+2025-11-09 02:30:00+00:00: Potential W found
+2025-11-09 02:30:00+00:00: BUY W at 101852.953125
+2025-11-09 02:45:00+00:00: Potential W found
+2025-11-09 02:45:00+00:00: BUY W at 101885.4609375
+2025-11-09 03:00:00+00:00: Potential W found
+2025-11-09 03:00:00+00:00: BUY W at 101918.3125
+2025-11-09 03:15:00+00:00: Potential W found
+2025-11-09 03:15:00+00:00: BUY W at 101881.828125
+2025-11-09 03:30:00+00:00: Potential W found
+2025-11-09 03:30:00+00:00: BUY W at 101901.3984375
+2025-11-09 03:45:00+00:00: Potential W found
+2025-11-09 03:45:00+00:00: BUY W at 101939.59375
+2025-11-09 04:00:00+00:00: Potential W found
+2025-11-09 04:15:00+00:00: Potential W found
+2025-11-09 04:15:00+00:00: BUY W at 101936.734375
+2025-11-09 04:30:00+00:00: Potential W found
+2025-11-09 04:30:00+00:00: BUY W at 101949.46875
+2025-11-09 04:45:00+00:00: Potential W found
+2025-11-09 04:45:00+00:00: BUY W at 101669.578125
+2025-11-10 02:00:00+00:00: Asia Range: 892.60 (0.84%), Peaks: 7
+2025-11-10 02:00:00+00:00: Potential W found
+2025-11-10 02:00:00+00:00: BUY W at 106510.4921875
+2025-11-10 02:15:00+00:00: Potential W found
+2025-11-10 02:15:00+00:00: BUY W at 106335.75
+2025-11-10 02:30:00+00:00: Potential W found
+2025-11-10 02:30:00+00:00: BUY W at 106353.234375
+2025-11-10 02:45:00+00:00: Potential W found
+2025-11-10 02:45:00+00:00: BUY W at 106421.890625
+2025-11-10 03:00:00+00:00: Potential W found
+2025-11-10 03:00:00+00:00: BUY W at 106327.0078125
+2025-11-10 03:15:00+00:00: Potential W found
+2025-11-10 03:15:00+00:00: BUY W at 106246.4453125
+2025-11-10 03:30:00+00:00: Potential W found
+2025-11-10 03:30:00+00:00: BUY W at 105926.84375
+2025-11-10 03:45:00+00:00: Potential W found
+2025-11-10 03:45:00+00:00: BUY W at 105923.7734375
+2025-11-10 04:00:00+00:00: Potential W found
+2025-11-10 04:00:00+00:00: BUY W at 105980.4140625
+2025-11-10 04:15:00+00:00: Potential W found
+2025-11-10 04:15:00+00:00: BUY W at 106280.9140625
+2025-11-10 04:30:00+00:00: Potential W found
+2025-11-10 04:30:00+00:00: BUY W at 106470.453125
+2025-11-10 04:45:00+00:00: Potential W found
+2025-11-10 04:45:00+00:00: BUY W at 106386.796875
+2025-11-11 02:00:00+00:00: Asia Range: 2430.89 (2.32%), Peaks: 6
+2025-11-12 02:00:00+00:00: Asia Range: 862.69 (0.84%), Peaks: 7
+2025-11-12 02:00:00+00:00: Potential W found
+2025-11-12 02:00:00+00:00: BUY W at 103502.9609375
+2025-11-12 02:15:00+00:00: Potential W found
+2025-11-12 02:15:00+00:00: BUY W at 103456.796875
+2025-11-12 02:30:00+00:00: Potential W found
+2025-11-12 02:30:00+00:00: BUY W at 103466.4296875
+2025-11-12 02:45:00+00:00: Potential W found
+2025-11-12 02:45:00+00:00: BUY W at 103086.46875
+2025-11-12 03:00:00+00:00: Potential W found
+2025-11-12 03:00:00+00:00: BUY W at 103301.8203125
+2025-11-12 03:15:00+00:00: Potential W found
+2025-11-12 03:30:00+00:00: Potential W found
+2025-11-12 03:45:00+00:00: Potential W found
+2025-11-12 04:00:00+00:00: Potential W found
+2025-11-12 04:15:00+00:00: Potential W found
+2025-11-12 04:30:00+00:00: Potential W found
+2025-11-12 04:45:00+00:00: Potential W found
+2025-11-13 02:00:00+00:00: Asia Range: 2590.92 (2.56%), Peaks: 4
+2025-11-14 02:00:00+00:00: Asia Range: 3668.26 (3.82%), Peaks: 3
+2025-11-15 02:00:00+00:00: Asia Range: 2013.71 (2.13%), Peaks: 2
+2025-11-16 02:00:00+00:00: Asia Range: 1171.88 (1.24%), Peaks: 6
+2025-11-16 02:00:00+00:00: Potential W found
+2025-11-16 02:00:00+00:00: BUY W at 95826.2421875
+2025-11-16 02:15:00+00:00: Potential W found
+2025-11-16 02:15:00+00:00: BUY W at 95736.53125
+2025-11-16 02:30:00+00:00: Potential W found
+2025-11-16 02:30:00+00:00: BUY W at 95865.1953125/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3056: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3057: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3058: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3059: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3060: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3061: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3062: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3150: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3438: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3439: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3440: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3441: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3442: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3443: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3444: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3445: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3446: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3447: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3448: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3449: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3630: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3631: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3632: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3633: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3634: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3635: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3636: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3637: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3638: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3639: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3640: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3641: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3822: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3823: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3824: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3825: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3826: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3827: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3828: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3829: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3830: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3918: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3919: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=3920: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4014: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4015: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4016: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4017: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4018: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4019: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4020: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4021: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4022: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4110: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4111: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4112: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4113: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4114: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4115: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4116: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4117: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4118: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4119: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4120: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4121: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+
+2025-11-16 02:45:00+00:00: Potential W found
+2025-11-16 02:45:00+00:00: BUY W at 96000.0078125
+2025-11-16 03:00:00+00:00: Potential W found
+2025-11-16 03:00:00+00:00: BUY W at 95957.6953125
+2025-11-16 03:15:00+00:00: Potential W found
+2025-11-16 03:15:00+00:00: BUY W at 95833.5546875
+2025-11-16 03:30:00+00:00: Potential W found
+2025-11-16 03:30:00+00:00: BUY W at 95959.2109375
+2025-11-16 03:45:00+00:00: Potential W found
+2025-11-16 03:45:00+00:00: BUY W at 96042.53125
+2025-11-16 04:00:00+00:00: Potential W found
+2025-11-16 04:00:00+00:00: BUY W at 95994.609375
+2025-11-16 04:15:00+00:00: Potential W found
+2025-11-16 04:30:00+00:00: Potential W found
+2025-11-16 04:45:00+00:00: Potential W found
+2025-11-17 02:00:00+00:00: Asia Range: 747.91 (0.79%), Peaks: 8
+2025-11-17 02:00:00+00:00: Potential M found
+2025-11-17 02:00:00+00:00: SELL M at 95280.9921875
+2025-11-17 02:15:00+00:00: Potential M found
+2025-11-17 02:30:00+00:00: Potential M found
+2025-11-17 02:45:00+00:00: Potential M found
+2025-11-17 03:00:00+00:00: Potential M found
+2025-11-17 03:15:00+00:00: Potential M found
+2025-11-17 03:30:00+00:00: Potential M found
+2025-11-17 03:45:00+00:00: Potential M found
+2025-11-17 04:00:00+00:00: Potential M found
+2025-11-17 04:15:00+00:00: Potential M found
+2025-11-17 04:30:00+00:00: Potential M found
+2025-11-17 04:45:00+00:00: Potential M found
+2025-11-18 02:00:00+00:00: Asia Range: 2764.35 (3.10%), Peaks: 5
+2025-11-19 02:00:00+00:00: Asia Range: 2743.20 (3.05%), Peaks: 3
+2025-11-20 02:00:00+00:00: Asia Range: 1360.34 (1.48%), Peaks: 5
+2025-11-20 02:00:00+00:00: Potential M found
+2025-11-20 02:00:00+00:00: SELL M at 91858.6484375
+2025-11-20 02:15:00+00:00: Potential M found
+2025-11-20 02:15:00+00:00: SELL M at 91842.8203125
+2025-11-20 02:30:00+00:00: Potential M found
+2025-11-20 02:30:00+00:00: SELL M at 91997.5859375
+2025-11-20 02:45:00+00:00: Potential M found
+2025-11-20 02:45:00+00:00: SELL M at 92279.4296875
+2025-11-20 03:00:00+00:00: Potential M found
+2025-11-20 03:00:00+00:00: SELL M at 92042.0234375
+2025-11-20 03:15:00+00:00: Potential M found
+2025-11-20 03:15:00+00:00: SELL M at 92110.53125
+2025-11-20 03:30:00+00:00: Potential M found
+2025-11-20 03:30:00+00:00: SELL M at 92163.9375
+2025-11-20 03:45:00+00:00: Potential M found
+2025-11-20 03:45:00+00:00: SELL M at 92012.578125
+2025-11-20 04:00:00+00:00: Potential M found
+2025-11-20 04:00:00+00:00: SELL M at 92013.1640625
+2025-11-20 04:15:00+00:00: Potential M found
+2025-11-20 04:15:00+00:00: SELL M at 91749.0546875
+2025-11-20 04:30:00+00:00: Potential M found
+2025-11-20 04:30:00+00:00: SELL M at 91662.15625
+2025-11-20 04:45:00+00:00: Potential M found
+2025-11-20 04:45:00+00:00: SELL M at 91782.359375
+2025-11-21 02:00:00+00:00: Asia Range: 1987.69 (2.33%), Peaks: 5
+2025-11-22 02:00:00+00:00: Asia Range: 1301.24 (1.55%), Peaks: 5
+2025-11-22 02:00:00+00:00: Potential W found
+2025-11-22 02:00:00+00:00: BUY W at 84416.5625
+2025-11-22 02:15:00+00:00: Potential W found
+2025-11-22 02:15:00+00:00: BUY W at 84408.2109375
+2025-11-22 02:30:00+00:00: Potential W found
+2025-11-22 02:30:00+00:00: BUY W at 84470.3515625
+2025-11-22 02:45:00+00:00: Potential W found
+2025-11-22 02:45:00+00:00: BUY W at 84514.515625
+2025-11-22 03:00:00+00:00: Potential W found
+2025-11-22 03:00:00+00:00: BUY W at 84425.3046875
+2025-11-22 03:15:00+00:00: Potential W found
+2025-11-22 03:15:00+00:00: BUY W at 84178.34375
+2025-11-22 03:30:00+00:00: Potential W found
+2025-11-22 03:30:00+00:00: BUY W at 83940.5625
+2025-11-22 03:45:00+00:00: Potential W found
+2025-11-22 03:45:00+00:00: BUY W at 84056.0859375
+2025-11-22 04:00:00+00:00: Potential W found
+2025-11-22 04:00:00+00:00: BUY W at 84264.9921875
+2025-11-22 04:15:00+00:00: Potential W found
+2025-11-22 04:15:00+00:00: BUY W at 84051.171875
+2025-11-22 04:30:00+00:00: Potential W found
+2025-11-22 04:30:00+00:00: BUY W at 83837.1484375
+2025-11-22 04:45:00+00:00: Potential W found
+2025-11-22 04:45:00+00:00: BUY W at 83837.984375
+2025-11-23 02:00:00+00:00: Asia Range: 1837.93 (2.16%), Peaks: 4
+2025-11-24 02:00:00+00:00: Asia Range: 1564.39 (1.81%), Peaks: 7
+2025-11-24 02:00:00+00:00: Potential W found
+2025-11-24 02:00:00+00:00: BUY W at 86832.6015625
+2025-11-24 02:15:00+00:00: Potential W found
+2025-11-24 02:15:00+00:00: BUY W at 86835.2421875
+2025-11-24 02:30:00+00:00: Potential W found
+2025-11-24 02:30:00+00:00: BUY W at 87120.7734375
+2025-11-24 02:45:00+00:00: Potential W found
+2025-11-24 02:45:00+00:00: BUY W at 86977.4453125
+2025-11-24 03:00:00+00:00: Potential W found
+2025-11-24 03:00:00+00:00: BUY W at 86895.03125
+2025-11-24 03:15:00+00:00: Potential W found
+2025-11-24 03:15:00+00:00: BUY W at 86847.640625
+2025-11-24 03:30:00+00:00: Potential W found
+2025-11-24 03:30:00+00:00: BUY W at 86795.8671875
+2025-11-24 03:45:00+00:00: Potential W found
+2025-11-24 03:45:00+00:00: BUY W at 86959.3671875
+2025-11-24 04:00:00+00:00: Potential W found
+2025-11-24 04:00:00+00:00: BUY W at 86581.859375
+2025-11-24 04:15:00+00:00: Potential W found
+2025-11-24 04:30:00+00:00: Potential W found
+2025-11-24 04:45:00+00:00: Potential W found
+2025-11-25 02:00:00+00:00: Asia Range: 997.59 (1.14%), Peaks: 5
+2025-11-25 02:00:00+00:00: Potential W found
+2025-11-25 02:00:00+00:00: BUY W at 88008.4453125
+2025-11-25 02:15:00+00:00: Potential W found
+2025-11-25 02:15:00+00:00: BUY W at 87736.78125
+2025-11-25 02:30:00+00:00: Potential W found
+2025-11-25 02:30:00+00:00: BUY W at 87708.5703125
+2025-11-25 02:45:00+00:00: Potential W found
+2025-11-25 03:00:00+00:00: Potential W found
+2025-11-25 03:15:00+00:00: Potential W found
+2025-11-25 03:30:00+00:00: Potential W found
+2025-11-25 03:45:00+00:00: Potential W found
+2025-11-25 04:00:00+00:00: Potential W found
+2025-11-25 04:15:00+00:00: Potential W found
+2025-11-25 04:30:00+00:00: Potential W found
+2025-11-25 04:45:00+00:00: Potential W found
+2025-11-26 02:00:00+00:00: Asia Range: 1255.52 (1.44%), Peaks: 5
+2025-11-26 02:00:00+00:00: Potential W found
+2025-11-26 02:00:00+00:00: BUY W at 87715.3828125
+2025-11-26 02:15:00+00:00: Potential W found
+2025-11-26 02:15:00+00:00: BUY W at 87756.03125
+2025-11-26 02:30:00+00:00: Potential W found
+2025-11-26 02:30:00+00:00: BUY W at 87714.3125
+2025-11-26 02:45:00+00:00: Potential W found
+2025-11-26 02:45:00+00:00: BUY W at 87862.171875
+2025-11-26 03:00:00+00:00: Potential W found
+2025-11-26 03:00:00+00:00: BUY W at 87657.3515625
+2025-11-26 03:15:00+00:00: Potential W found
+2025-11-26 03:15:00+00:00: BUY W at 87544.0
+2025-11-26 03:30:00+00:00: Potential W found
+2025-11-26 03:30:00+00:00: BUY W at 87538.484375
+2025-11-26 03:45:00+00:00: Potential W found
+2025-11-26 03:45:00+00:00: BUY W at 87392.3515625
+2025-11-26 04:00:00+00:00: Potential W found
+2025-11-26 04:00:00+00:00: BUY W at 87360.8515625
+2025-11-26 04:15:00+00:00: Potential W found
+2025-11-26 04:30:00+00:00: Potential W found
+2025-11-26 04:45:00+00:00: Potential W found
+2025-11-27 02:00:00+00:00: Asia Range: 1400.70 (1.55%), Peaks: 5
+2025-11-27 02:00:00+00:00: Potential M found
+2025-11-27 02:00:00+00:00: SELL M at 91293.734375
+2025-11-27 02:15:00+00:00: Potential M found
+2025-11-27 02:15:00+00:00: SELL M at 91437.1328125
+2025-11-27 02:30:00+00:00: Potential M found
+2025-11-27 02:30:00+00:00: SELL M at 91366.765625
+2025-11-27 02:45:00+00:00: Potential M found
+2025-11-27 02:45:00+00:00: SELL M at 91395.1015625
+2025-11-27 03:00:00+00:00: Potential M found
+2025-11-27 03:00:00+00:00: SELL M at 91274.1875
+2025-11-27 03:15:00+00:00: Potential M found
+2025-11-27 03:15:00+00:00: SELL M at 91356.6015625
+2025-11-27 03:30:00+00:00: Potential M found
+2025-11-27 03:30:00+00:00: SELL M at 91412.25
+2025-11-27 03:45:00+00:00: Potential M found
+2025-11-27 03:45:00+00:00: SELL M at 91494.8046875
+2025-11-27 04:00:00+00:00: Potential M found
+2025-11-27 04:00:00+00:00: SELL M at 91501.5625
+2025-11-27 04:15:00+00:00: Potential M found
+2025-11-27 04:15:00+00:00: SELL M at 91625.4296875
+2025-11-27 04:30:00+00:00: Potential M found
+2025-11-27 04:30:00+00:00: SELL M at 91834.921875
+2025-11-27 04:45:00+00:00: Potential M found
+2025-11-27 04:45:00+00:00: SELL M at 91553.3984375
+2025-11-28 02:00:00+00:00: Asia Range: 976.12 (1.08%), Peaks: 2
+2025-11-30 02:00:00+00:00: Asia Range: 540.13 (0.60%), Peaks: 4/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4314: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4315: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4316: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4317: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4318: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4506: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4507: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4508: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4509: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4510: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4511: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4512: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4513: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4514: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4515: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4516: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4517: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4986: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4987: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4989: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4991: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4992: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=4994: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=5082: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=5085: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=5086: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/venv/lib/python3.13/site-packages/backtesting/backtesting.py:966: UserWarning: time=5562: Broker canceled the relative-sized order due to insufficient margin.
+  warnings.warn(
+                                                       
+2025-11-30 02:00:00+00:00: Potential W found
+2025-11-30 02:00:00+00:00: BUY W at 90961.25
+2025-11-30 02:15:00+00:00: Potential W found
+2025-11-30 02:15:00+00:00: BUY W at 90995.8046875
+2025-11-30 02:30:00+00:00: Potential W found
+2025-11-30 02:30:00+00:00: BUY W at 90938.1640625
+2025-11-30 02:45:00+00:00: Potential W found
+2025-11-30 02:45:00+00:00: BUY W at 90973.234375
+2025-11-30 03:00:00+00:00: Potential W found
+2025-11-30 03:00:00+00:00: BUY W at 91005.25
+2025-11-30 03:15:00+00:00: Potential W found
+2025-11-30 03:30:00+00:00: Potential W found
+2025-11-30 03:45:00+00:00: Potential W found
+2025-11-30 04:00:00+00:00: Potential W found
+2025-11-30 04:15:00+00:00: Potential W found
+2025-11-30 04:30:00+00:00: Potential W found
+2025-11-30 04:45:00+00:00: Potential W found
+2025-12-01 02:00:00+00:00: Asia Range: 2049.66 (2.39%), Peaks: 2
+2025-12-02 02:00:00+00:00: Asia Range: 1048.67 (1.22%), Peaks: 7
+2025-12-02 02:00:00+00:00: Potential W found
+2025-12-02 02:00:00+00:00: BUY W at 87011.6015625
+2025-12-02 02:15:00+00:00: Potential W found
+2025-12-02 02:15:00+00:00: BUY W at 86927.4609375
+2025-12-02 02:30:00+00:00: Potential W found
+2025-12-02 02:30:00+00:00: BUY W at 87004.515625
+2025-12-02 02:45:00+00:00: Potential W found
+2025-12-02 02:45:00+00:00: BUY W at 87032.6953125
+2025-12-02 03:00:00+00:00: Potential W found
+2025-12-02 03:00:00+00:00: BUY W at 86725.953125
+2025-12-02 03:15:00+00:00: Potential W found
+2025-12-02 03:15:00+00:00: BUY W at 86501.2578125
+2025-12-02 03:30:00+00:00: Potential W found
+2025-12-02 03:30:00+00:00: BUY W at 86481.1796875
+2025-12-02 03:45:00+00:00: Potential W found
+2025-12-02 03:45:00+00:00: BUY W at 86408.96875
+2025-12-02 04:00:00+00:00: Potential W found
+2025-12-02 04:00:00+00:00: BUY W at 86716.9921875
+2025-12-02 04:15:00+00:00: Potential W found
+2025-12-02 04:15:00+00:00: BUY W at 86885.1953125
+2025-12-02 04:30:00+00:00: Potential W found
+2025-12-02 04:30:00+00:00: BUY W at 86679.2890625
+2025-12-02 04:45:00+00:00: Potential W found
+2025-12-02 04:45:00+00:00: BUY W at 86742.0703125
+2025-12-03 02:00:00+00:00: Asia Range: 2392.90 (2.61%), Peaks: 3
+2025-12-04 02:00:00+00:00: Asia Range: 1201.41 (1.29%), Peaks: 5
+2025-12-05 02:00:00+00:00: Asia Range: 817.04 (0.89%), Peaks: 6
+2025-12-06 02:00:00+00:00: Asia Range: 558.98 (0.63%), Peaks: 5
+2025-12-07 02:00:00+00:00: Asia Range: 458.03 (0.51%), Peaks: 6
+2025-12-07 02:00:00+00:00: Potential M found
+2025-12-07 02:00:00+00:00: SELL M at 89487.375
+2025-12-07 02:15:00+00:00: Potential M found
+2025-12-07 02:15:00+00:00: SELL M at 89397.0703125
+2025-12-07 02:30:00+00:00: Potential M found
+2025-12-07 02:45:00+00:00: Potential M found
+2025-12-07 02:45:00+00:00: SELL M at 89367.4921875
+2025-12-07 03:00:00+00:00: Potential M found
+2025-12-07 03:15:00+00:00: Potential M found
+2025-12-07 03:15:00+00:00: SELL M at 89366.34375
+2025-12-07 03:30:00+00:00: Potential M found
+2025-12-07 03:30:00+00:00: SELL M at 89520.3671875
+2025-12-07 03:45:00+00:00: Potential M found
+2025-12-07 04:00:00+00:00: Potential M found
+2025-12-07 04:00:00+00:00: SELL M at 89391.4609375
+2025-12-07 04:15:00+00:00: Potential M found
+2025-12-07 04:30:00+00:00: Potential M found
+2025-12-07 04:45:00+00:00: Potential M found
+2025-12-08 02:00:00+00:00: Asia Range: 1315.69 (1.46%), Peaks: 6
+2025-12-08 02:00:00+00:00: Potential W found
+2025-12-08 02:00:00+00:00: BUY W at 91390.7265625
+2025-12-08 02:15:00+00:00: Potential W found
+2025-12-08 02:30:00+00:00: Potential W found
+2025-12-08 02:45:00+00:00: Potential W found
+2025-12-08 02:45:00+00:00: BUY W at 91544.1953125
+2025-12-08 03:00:00+00:00: Potential W found
+2025-12-08 03:00:00+00:00: BUY W at 91574.7109375
+2025-12-08 03:15:00+00:00: Potential W found
+2025-12-08 03:30:00+00:00: Potential W found
+2025-12-08 03:45:00+00:00: Potential W found
+2025-12-08 04:00:00+00:00: Potential W found
+2025-12-08 04:15:00+00:00: Potential W found
+2025-12-08 04:30:00+00:00: Potential W found
+2025-12-08 04:45:00+00:00: Potential W found
+2025-12-09 02:00:00+00:00: Asia Range: 965.30 (1.08%), Peaks: 7
+2025-12-10 02:00:00+00:00: Asia Range: 701.89 (0.76%), Peaks: 5
+2025-12-11 02:00:00+00:00: Asia Range: 1920.87 (2.15%), Peaks: 3
+2025-12-12 02:00:00+00:00: Asia Range: 1219.84 (1.33%), Peaks: 8
+2025-12-13 02:00:00+00:00: Asia Range: 305.71 (0.34%), Peaks: 6
+2025-12-13 02:00:00+00:00: Potential W found
+2025-12-13 02:00:00+00:00: BUY W at 90360.875
+2025-12-13 02:15:00+00:00: Potential W found
+2025-12-13 02:15:00+00:00: BUY W at 90392.203125
+Start                     2025-10-15 00:00...
+End                       2025-12-13 07:15...
+Duration                     59 days 07:15:00
+Exposure Time [%]                         0.0
+Equity Final [$]                      10000.0
+Equity Peak [$]                       10000.0
+Return [%]                                0.0
+Buy & Hold Return [%]                -19.9181
+Return (Ann.) [%]                         0.0
+Volatility (Ann.) [%]                     0.0
+CAGR [%]                                  0.0
+Sharpe Ratio                              NaN
+Sortino Ratio                             NaN
+Calmar Ratio                              NaN
+Alpha [%]                                 0.0
+Beta                                      0.0
+Max. Drawdown [%]                        -0.0
+Avg. Drawdown [%]                         NaN
+Max. Drawdown Duration                    NaN
+Avg. Drawdown Duration                    NaN
+# Trades                                    0
+Win Rate [%]                              NaN
+Best Trade [%]                            NaN
+Worst Trade [%]                           NaN
+Avg. Trade [%]                            NaN
+Max. Trade Duration                       NaN
+Avg. Trade Duration                       NaN
+Profit Factor                             NaN
+Expectancy [%]                            NaN
+SQN                                       NaN
+Kelly Criterion                           NaN
+_strategy                       FL001AsiaUKMW
+_equity_curve                             ...
+_trades                   Empty DataFrame
+...
+dtype: object

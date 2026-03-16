@@ -1,0 +1,65 @@
+# requirements-wsl.txt — Dell Executor (x86_64 / WSL2 / Ubuntu)
+# PINNED cross-platform dependencies for mathematically identical execution.
+# NEVER use >= without an upper bound. Re-run 'pip freeze' after any change.
+# Python 3.11+ required.
+
+# ─── Web Framework & ASGI ───────────────────────────────────────────────────
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+starlette==0.41.3               # transitive — pinned to avoid breaking FastAPI
+
+# ─── Real-time / Socket.IO ──────────────────────────────────────────────────
+python-socketio==5.16.1
+python-engineio==4.11.1         # transitive to python-socketio
+
+# ─── Redis (Streams, pub/sub) ───────────────────────────────────────────────
+redis==5.2.1                    # Async-compatible; supports redis 8.0 RESP3
+hiredis==3.0.0                  # C parser optional but recommended for perf
+
+# ─── Vector DB (Strategy Memory) ────────────────────────────────────────────
+chromadb==1.5.2
+
+# ─── Data & ML Stack (MUST match mac ARM64 wheels exactly for shared packages)
+numpy==2.1.3
+pandas==2.2.3
+pyarrow==18.1.0                 # Parquet read/write
+zstandard==0.23.0               # Zstd compression for Parquet (FR35)
+
+# ─── Serialization ──────────────────────────────────────────────────────────
+msgpack==1.1.0                  # Mac→Dell Redis Streams payloads (never for PWA)
+
+# ─── Secrets Management ─────────────────────────────────────────────────────
+keyring==25.5.0
+SecretStorage==3.3.3            # keyring libsecret backend on WSL2
+cryptography==44.0.0            # used by SecretStorage + python-jose
+
+# ─── Authentication ─────────────────────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# ─── Structured Logging ─────────────────────────────────────────────────────
+python-json-logger==2.0.7
+
+# ─── Configuration ──────────────────────────────────────────────────────────
+PyYAML==6.0.2
+
+# ─── HTTP Client (for Oracle + Exchange REST calls) ─────────────────────────
+httpx==0.28.1                   # async-native; used by FastAPI test client too
+aiohttp==3.11.11                # alternative for streaming downloads
+
+# ─── Async Utilities ────────────────────────────────────────────────────────
+asyncio-throttle==1.0.2         # API rate limiter (10 req/s NFR3)
+tenacity==9.0.0                 # Retry logic (Mute-Retry Backoff FR42)
+
+# ─── AI & LLM Interface ──────────────────────────────────────────────────────
+litellm==1.52.12
+
+# ─── Testing ────────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+httpx==0.28.1                   # FastAPI TestClient (async)
+
+# ─── Dev Tools (exclude from production image) ──────────────────────────────
+# mypy==1.13.0                  # static type checking — run in CI only
+# ruff==0.8.3                   # linting — run in CI only

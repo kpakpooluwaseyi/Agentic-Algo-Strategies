@@ -1,0 +1,50 @@
+# requirements-mac.txt — Mac M1 Validator (ARM64 / macOS)
+# PINNED cross-platform dependencies for mathematically identical execution.
+# NEVER use >= without an upper bound. Re-run 'pip freeze' after any change.
+# Python 3.11+ required.
+# All wheels must be ARM64-compatible (Apple Silicon).
+
+# ─── Data & ML Stack (pin-IDENTICAL to requirements-wsl.txt shared packages) ─
+numpy==2.1.3
+pandas==2.2.3
+pyarrow==18.1.0                 # Parquet read/write (arm64 wheel available)
+zstandard==0.23.0               # Zstd compression for Parquet (FR35)
+
+# ─── Backtesting Engine ──────────────────────────────────────────────────────
+vectorbt==0.27.2                # OSS edition; ARM64 wheel via pip
+# Note: VectorBT Pro requires separate license — use OSS for open-source portability
+
+# ─── Serialization ───────────────────────────────────────────────────────────
+msgpack==1.1.0                  # Mac→Dell Redis Streams payloads (MUST match WSL pin)
+
+# ─── Redis publisher (Mac → Dell only — no local Redis instance on Mac) ──────
+redis==5.2.1                    # Async-compatible; connects to Dell redis over Tailscale
+hiredis==3.0.0
+
+# ─── Secrets Management (macOS Keychain) ─────────────────────────────────────
+keyring==25.5.0
+pyobjc-framework-Security==10.3.1  # macOS Keychain backend (ARM64 native)
+cryptography==44.0.0
+
+# ─── Structured Logging ──────────────────────────────────────────────────────
+python-json-logger==2.0.7
+
+# ─── Configuration ───────────────────────────────────────────────────────────
+PyYAML==6.0.2
+
+# ─── HTTP Client (Tailscale health checks) ───────────────────────────────────
+httpx==0.28.1
+
+# ─── Retry Logic ─────────────────────────────────────────────────────────────
+tenacity==9.0.0
+
+# ─── Testing ─────────────────────────────────────────────────────────────────
+pytest==8.3.4
+pytest-asyncio==0.24.0
+pytest-cov==6.0.0
+
+# ─── NOT included (Dell-only packages) ───────────────────────────────────────
+# fastapi, uvicorn, python-socketio, python-engineio — Dell Executor only
+# chromadb                       — ChromaDB runs on Dell, not Mac
+# passlib, python-jose           — JWT auth is Dell FastAPI concern
+# SecretStorage                  — Linux-only; macOS uses pyobjc instead

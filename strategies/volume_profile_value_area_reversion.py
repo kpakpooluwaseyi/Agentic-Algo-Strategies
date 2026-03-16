@@ -186,7 +186,7 @@ class VolumeProfileValueAreaReversionStrategy(Strategy):
 # --- Backtesting Execution ---
 
 if __name__ == '__main__':
-    data_path = 'data/BTC-USD-15m.csv'
+    data_path = '/Users/kpakpo/RBI_Swarm/moon-dev-ai-agents-for-trading/data/crypto/BTC-USDT_15m_160weeks.csv'
 
     if not os.path.exists(data_path):
         print(f"Error: Data file not found at {data_path}")

@@ -1,0 +1,83 @@
+# Structured JSON Logging Configuration — RBI Swarm
+# All components MUST use this config via rbi_core/utils/logging.py
+# Required log fields: ts, component, event, level, context
+
+version: 1
+disable_existing_loggers: false
+
+formatters:
+  json:
+    "()": pythonjsonlogger.jsonlogger.JsonFormatter
+    format: "%(asctime)s %(levelname)s %(name)s %(message)s"
+    rename_fields:
+      asctime: "ts"
+      levelname: "level"
+      name: "component"
+    datefmt: "%Y-%m-%dT%H:%M:%S%z"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: json
+    stream: ext://sys.stdout
+
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: json
+    filename: logs/rbi_swarm.log
+    maxBytes: 10485760      # 10MB
+    backupCount: 5
+    encoding: utf-8
+
+  # Async handler — wraps file handler in a low-priority thread
+  # to avoid blocking the core execution loop (NFR14)
+  async_file:
+    class: logging.handlers.QueueHandler
+    level: INFO
+    formatter: json
+    queue: ext://rbi_core.utils.logging.log_queue
+
+root:
+  level: INFO
+  handlers:
+    - console
+    - file
+
+loggers:
+  rbi_core:
+    level: INFO
+    handlers:
+      - console
+      - file
+    propagate: false
+
+  rbi_core.execution:
+    level: INFO
+    propagate: true
+
+  rbi_core.resilience:
+    level: INFO
+    propagate: true
+
+  rbi_core.networking:
+    level: INFO
+    propagate: true
+
+  rbi_core.memory:
+    level: INFO
+    propagate: true
+
+  # Suppress noisy third-party loggers
+  uvicorn:
+    level: WARNING
+    propagate: false
+
+  socketio:
+    level: WARNING
+    propagate: false
+
+  chromadb:
+    level: WARNING
+    propagate: false

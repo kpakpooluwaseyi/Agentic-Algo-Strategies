@@ -1,0 +1,23 @@
+[Unit]
+Description=RBI Swarm Dashboard — Next.js PWA Server
+After=network.target rbi-api.service
+Wants=rbi-api.service
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/moon-dev-ai-agents-for-trading/dashboard-pwa
+ExecStart=/usr/bin/node_modules/.bin/next start --port 3000
+ExecStop=/bin/kill -SIGTERM $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rbi-dashboard
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

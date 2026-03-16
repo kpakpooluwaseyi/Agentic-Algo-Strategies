@@ -1,0 +1,13 @@
+# RBI Swarm — Network Configuration
+#
+# IMPORTANT: Replace all placeholder IPs with your actual Tailscale IPs.
+# Run `tailscale ip -4` on each machine to get the correct values.
+#
+# Tailscale IPs are always in the 100.64.0.0/10 CGNAT range (100.x.x.x).
+
+redis_host: "100.71.18.71"        # Dell Tailscale IP — update via `tailscale ip -4`
+redis_port: 6379
+tailscale_cidr: "100.64.0.0/10" # Standard Tailscale CGNAT range — do not change
+
+dell_tailscale_ip: "100.71.18.71" # Dell Executor Tailscale IP — update per deployment
+mac_tailscale_ip: "100.74.67.56"  # Mac Validator Tailscale IP — update per deployment

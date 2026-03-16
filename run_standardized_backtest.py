@@ -144,14 +144,28 @@ def run_strategy_import(strategy_name: str, class_name: str, data: pd.DataFrame,
                 # Continue anyway - might still work
         
         # Create backtest
-        bt = Backtest(data, StrategyClass, cash=10000, commission=.002)
+        from backtesting.lib import FractionalBacktest
+        bt = FractionalBacktest(data, StrategyClass, cash=1000000, commission=.002)
         
         # Run or optimize
         if optimize:
-            log(f"  Running optimization...")
-            # Note: For optimization, we'd need strategy-specific params
-            # For now, just run with defaults
-            stats = bt.run()
+            log(f"  Running auto-optimization...")
+            # Auto-discover numeric parameters for optimization
+            opt_params = {}
+            for attr in ['long_sma_period', 'short_sma_period', 'rsi_period', 'ema_period', 'lookback', 'risk_reward_ratio']:
+                if hasattr(StrategyClass, attr):
+                    val = getattr(StrategyClass, attr)
+                    if isinstance(val, int):
+                        opt_params[attr] = range(max(2, val-20), val+21, 5)
+                    elif isinstance(val, float):
+                        opt_params[attr] = [val * 0.8, val, val * 1.2]
+            
+            if opt_params:
+                log(f"    Optimizing: {list(opt_params.keys())}")
+                stats = bt.optimize(**opt_params, maximize='Sharpe Ratio')
+            else:
+                log(f"    No known parameters found for optimization, running defaults.")
+                stats = bt.run()
         else:
             log(f"  Running single backtest...")
             stats = bt.run()

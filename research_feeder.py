@@ -3,7 +3,7 @@
 🌙 Moon Dev's Research Feeder
 Extracts trading strategies from research inputs and creates GitHub Issues for Jules.
 
-Uses Gemini 2.5 Flash for strategy extraction (~$0.10/1M tokens)
+Uses Gemini 3.0 Flash for strategy extraction (~$0.10/1M tokens)
 
 Supported input formats:
 - PDF files (.pdf)
@@ -29,6 +29,12 @@ import google.generativeai as genai
 from github import Github
 import PyPDF2
 from youtube_transcript_api import YouTubeTranscriptApi
+# Import Researcher Agent
+sys.path.append(str(Path(__file__).parent)) # Ensure root is in path
+try:
+    from src.agents.researcher_agent import ResearcherAgent
+except ImportError:
+    ResearcherAgent = None
 
 # Load environment variables
 load_dotenv()
@@ -42,8 +48,8 @@ GEMINI_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "kpakpooluwaseyi/Agentic-Algo-Strategies")
 
-# Gemini model - using 2.5 Flash for 1M context window
-GEMINI_MODEL = "models/gemini-2.5-flash"
+# Gemini model - using 3.0 Flash for massive context window and speed
+GEMINI_MODEL = "models/gemini-3.0-flash-001"
 
 # Setup logging
 LOGS_DIR.mkdir(exist_ok=True)
@@ -388,17 +394,27 @@ def create_github_issue(repo, strategy: str, source: str, dry_run: bool = False)
         return False
 
 
-def main(dry_run: bool = False):
+def main(dry_run: bool = False, autonomous: bool = False):
     """Main processing loop"""
     logger.info("🌙 Moon Dev's Research Feeder Starting...")
+    if autonomous:
+        logger.info("🤖 Running in AUTONOMOUS mode - will trigger Researcher Agent")
+        if ResearcherAgent is None:
+            logger.error("❌ Researcher Agent not found! Check imports.")
+            return
+            
     logger.info(f"📂 Looking for inputs in: {RESEARCH_INPUTS_DIR}")
     
     if dry_run:
         logger.info("🏃 Running in DRY-RUN mode - no issues will be created")
     
     # Initialize clients
-    model = init_gemini()
-    repo = init_github()
+    if not autonomous:
+        model = init_gemini()
+        repo = init_github()
+    else:
+        # Autonomous mode uses ResearcherAgent's own LLM client
+        agent = ResearcherAgent(verbose=True)
     
     # Create directories
     RESEARCH_INPUTS_DIR.mkdir(exist_ok=True)
@@ -434,6 +450,20 @@ def main(dry_run: bool = False):
         content = process_file(filepath)
         if not content:
             continue
+            
+        # AUTONOMOUS MODE: Trigger Researcher Agent and exit (one thesis at a time)
+        if autonomous:
+            logger.info(f"🤖 Triggering Researcher Agent for: {filepath.name}")
+            success = agent.run(specific_input=content)
+            if success:
+                logger.info("✅ Research Agent generated thesis. Stopping feeder to allow Developer Loop.")
+                # Mark as processed handled by agent? No, we should mark it here to avoid re-reading.
+                if not dry_run:
+                    processed_marker.touch()
+                return # Exit after one thesis to let the loop continue
+            else:
+                logger.error("❌ Research Agent failed to generate thesis.")
+                continue
         
         # Extract strategies using Gemini
         # If it's a YouTube list, process each video individually
@@ -474,7 +504,8 @@ def main(dry_run: bool = False):
 if __name__ == "__main__":
     try:
         dry_run = "--dry-run" in sys.argv
-        main(dry_run=dry_run)
+        autonomous = "--autonomous" in sys.argv
+        main(dry_run=dry_run, autonomous=autonomous)
     except KeyboardInterrupt:
         logger.info("\n👋 Interrupted by user")
     except Exception as e:
